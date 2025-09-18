@@ -64,14 +64,14 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
         'Month': range(1, contract_months + 1),
         'Onboarded Vessels': monthly_vessels,
         'Pay-Per-Vessel': costs_ppv,
-        'Single Flat Fee': costs_single_flat,
         'Scheduled Flat Fee': costs_scheduled_flat,
+        'Single Flat Fee': costs_single_flat,
     })
     
     # 6. Calculate Cumulative Costs
     df['Cumulative Pay-Per-Vessel'] = df['Pay-Per-Vessel'].cumsum()
-    df['Cumulative Single Flat Fee'] = df['Single Flat Fee'].cumsum()
     df['Cumulative Scheduled Flat Fee'] = df['Scheduled Flat Fee'].cumsum()
+    df['Cumulative Single Flat Fee'] = df['Single Flat Fee'].cumsum()
     
     return df, single_flat_fee_tco, onboarding_duration
 
@@ -111,7 +111,7 @@ with st.sidebar:
             step=50
         )
         st.markdown("---")
-
+        
         with st.expander("**Model 2: Scheduled Flat Fee**", expanded=True):
             st.write("Define multiple periods with custom start months and fees.")
 
@@ -152,9 +152,8 @@ with st.sidebar:
                 
                 scheduled_fee_tiers[start_month] = fee
                 last_month = start_month
-        
         st.markdown("---")
-
+        
         st.markdown("**Model 3: Single Flat Fee**")
         flat_fee_discount = st.slider(
             "Discount for Flat Fee (%)", 
@@ -180,12 +179,11 @@ tco_ppv = cost_df['Pay-Per-Vessel'].sum()
 tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
 tco_list = {
     "Pay-Per-Vessel TCO": tco_ppv,
-    "Single Flat Fee TCO": single_flat_fee_tco,
-    "Scheduled Flat Fee TCO": tco_scheduled
+    "Scheduled Flat Fee TCO": tco_scheduled,
+    "Single Flat Fee TCO": single_flat_fee_tco
 }
 
 cols = st.columns(3)
-# The order here determines the display order of the metrics
 metric_labels_ordered = ["Pay-Per-Vessel TCO", "Scheduled Flat Fee TCO", "Single Flat Fee TCO"]
 
 for i, label in enumerate(metric_labels_ordered):
@@ -200,15 +198,14 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Price Per Vessel")
-    st.markdown("Shows the effective monthly price per vessel at different fleet sizes.")
     vessels_range = range(1, total_vessels + 1) if total_vessels > 0 else range(1,2)
     avg_monthly_scheduled_fee = tco_scheduled / contract_months if contract_months > 0 else 0
 
     price_per_vessel_data = {
         'Number of Vessels': vessels_range,
         'Pay-Per-Vessel': [pay_per_vessel_price] * len(vessels_range),
-        'Single Flat Fee': [(single_flat_fee_tco / contract_months) / v if v > 0 else 0 for v in vessels_range],
-        'Scheduled Flat Fee': [avg_monthly_scheduled_fee / v if v > 0 else 0 for v in vessels_range]
+        'Scheduled Flat Fee': [avg_monthly_scheduled_fee / v if v > 0 else 0 for v in vessels_range],
+        'Single Flat Fee': [(single_flat_fee_tco / contract_months) / v if v > 0 else 0 for v in vessels_range]
     }
     ppv_df = pd.DataFrame(price_per_vessel_data)
 
@@ -224,11 +221,10 @@ with col1:
 
 with col2:
     st.subheader("Monthly Cost Over Time")
-    st.markdown("Shows the expected monthly cash flow based on the onboarding plan.")
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
-        value_vars=['Pay-Per-Vessel', 'Single Flat Fee', 'Scheduled Flat Fee'], 
+        value_vars=['Pay-Per-Vessel', 'Scheduled Flat Fee', 'Single Flat Fee'], 
         var_name='Pricing Model', 
         value_name='Monthly Cost'
     )
@@ -247,9 +243,8 @@ with col2:
 # --- NEW CUMULATIVE TCO GRAPH ---
 st.markdown("---")
 st.header("🕰️ Cumulative Cost Over Time")
-st.markdown("This graph shows the total investment accumulating over the contract period, making it easy to see break-even points.")
 
-cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Single Flat Fee', 'Cumulative Scheduled Flat Fee']
+cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Scheduled Flat Fee', 'Cumulative Single Flat Fee']
 plot_df_cumulative = cost_df.melt(
     id_vars='Month',
     value_vars=cumulative_cols,
