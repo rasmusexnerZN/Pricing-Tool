@@ -174,7 +174,6 @@ onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", v
 
 # --- Summary Metrics with Highlighting ---
 st.header("📊 Financial Summary (Total Cost of Ownership)")
-st.markdown("The most cost-effective option is highlighted in green.")
 tco_ppv = cost_df['Pay-Per-Vessel'].sum()
 tco_ramped = cost_df['Ramped Flat Fee'].sum()
 tco_list = {
