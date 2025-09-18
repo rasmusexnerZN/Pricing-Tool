@@ -5,7 +5,7 @@ import math
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Maritime Pricing Simulator",
+    page_title="Pricing Tool",
     page_icon="🚢",
     layout="wide",
 )
