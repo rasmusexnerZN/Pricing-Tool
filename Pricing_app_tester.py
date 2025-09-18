@@ -273,7 +273,7 @@ fig_cumulative = px.line(
     y='Cumulative TCO',
     color='Pricing Model',
     labels={'Cumulative TCO': f'Cumulative TCO ({currency})'},
-    title='<b>Cumulative TCO Comparison</b>'
+
 )
 st.plotly_chart(fig_cumulative, use_container_width=True)
 
