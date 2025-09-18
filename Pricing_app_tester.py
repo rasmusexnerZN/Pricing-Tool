@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import math
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -11,7 +12,7 @@ st.set_page_config(
 
 # --- INITIALIZE SESSION STATE ---
 if 'num_ramp_periods' not in st.session_state:
-    st.session_state.num_ramp_periods = 2  # Default to 2 periods
+    st.session_state.num_ramp_periods = 2
 
 # --- HELPER FUNCTIONS ---
 
@@ -25,35 +26,39 @@ def get_fee_for_month(month, tiers_dict):
             break
     return fee
 
-def calculate_costs_over_time(total_vessels, contract_months, onboarding_duration, 
+def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
                               pay_per_vessel_price, flat_fee_discount,
                               ramp_fee_tiers):
-    """Calculates monthly costs over time for all three models."""
+    """Calculates monthly and cumulative costs over time for all three models."""
     
-    # 1. Calculate the Single Flat Fee TCV
-    base_tcv = pay_per_vessel_price * total_vessels * contract_months
+    # 1. Calculate the Onboarding Duration 
+    if vessels_per_month > 0:
+        onboarding_duration = math.ceil(total_vessels / vessels_per_month)
+    else:
+        onboarding_duration = 0
+
+    # 2. Calculate the Single Flat Fee TCO
+    base_tco = pay_per_vessel_price * total_vessels * contract_months
     discount_multiplier = 1 - (flat_fee_discount / 100)
-    single_flat_fee_tcv = base_tcv * discount_multiplier
+    single_flat_fee_tco = base_tco * discount_multiplier
 
-    # 2. Generate the monthly vessel count for the Pay-Per-Vessel model
+    # 3. Generate the monthly vessel count with remainder logic
     monthly_vessels = []
+    current_vessels = 0
     for month in range(1, contract_months + 1):
-        if month > onboarding_duration:
-            vessels_this_month = total_vessels
-        else:
-            # Linear ramp-up
-            vessels_this_month = int(total_vessels * (month / onboarding_duration)) if onboarding_duration > 0 else 0
-        monthly_vessels.append(max(0, vessels_this_month))
+        if current_vessels < total_vessels:
+            remaining_to_onboard = total_vessels - current_vessels
+            vessels_to_add = min(vessels_per_month, remaining_to_onboard)
+            current_vessels += vessels_to_add
+        monthly_vessels.append(current_vessels)
 
-    # 3. Calculate monthly costs for each model
+    # 4. Calculate monthly costs for each model
     costs_ppv = [pay_per_vessel_price * v for v in monthly_vessels]
-    
-    effective_monthly_single_flat = single_flat_fee_tcv / contract_months if contract_months > 0 else 0
+    effective_monthly_single_flat = single_flat_fee_tco / contract_months if contract_months > 0 else 0
     costs_single_flat = [effective_monthly_single_flat] * contract_months
-    
     costs_ramped_flat = [get_fee_for_month(m, ramp_fee_tiers) for m in range(1, contract_months + 1)]
 
-    # 4. Create DataFrame
+    # 5. Create DataFrame
     df = pd.DataFrame({
         'Month': range(1, contract_months + 1),
         'Onboarded Vessels': monthly_vessels,
@@ -62,7 +67,12 @@ def calculate_costs_over_time(total_vessels, contract_months, onboarding_duratio
         'Ramped Flat Fee': costs_ramped_flat,
     })
     
-    return df, single_flat_fee_tcv
+    # 6. Calculate Cumulative Costs
+    df['Cumulative Pay-Per-Vessel'] = df['Pay-Per-Vessel'].cumsum()
+    df['Cumulative Single Flat Fee'] = df['Single Flat Fee'].cumsum()
+    df['Cumulative Ramped Flat Fee'] = df['Ramped Flat Fee'].cumsum()
+    
+    return df, single_flat_fee_tco, onboarding_duration
 
 # --- UI & APP LOGIC ---
 
@@ -80,13 +90,14 @@ with st.sidebar:
     with tab1:
         st.subheader("Client & Contract")
         currency = st.selectbox("Currency", ["USD", "EUR", "DKK"])
-        total_vessels = st.number_input("Total Number of Vessels", min_value=1, value=50, step=5)
-        contract_months = st.number_input("Contract Period (Months)", min_value=1, value=36, step=1)
-        onboarding_duration = st.number_input(
-            "Onboarding Duration (Months)", 
-            min_value=1, max_value=contract_months, value=min(12, contract_months), step=1,
-            help="The ramp-up period for Pay-Per-Vessel costs."
-        )
+        total_vessels = st.number_input("Total Number of Vessels", min_value=1, value=50, step=1)
+        contract_months = st.number_input("Contract Period (Months)", min_value=1, value=48, step=1)
+        
+        st.markdown("---")
+        st.subheader("Onboarding Plan")
+        vessels_per_month = st.number_input("Vessels Onboarded Per Month", min_value=1, value=5, step=1, help="The number of vessels to add each month until the total is reached.")
+        
+        onboarding_duration_placeholder = st.empty()
 
     with tab2:
         st.subheader("Model Configuration")
@@ -105,7 +116,7 @@ with st.sidebar:
             "Discount for Flat Fee (%)", 
             min_value=0, 
             max_value=100, 
-            value=30,
+            value=20,
             help="The discount applied to the total potential Pay-Per-Vessel cost to calculate this fee."
         )
         st.markdown("---")
@@ -113,9 +124,8 @@ with st.sidebar:
         with st.expander("**Model 3: Ramped Flat Fee**", expanded=True):
             st.write("Define multiple periods with custom start months and fees.")
 
-            # --- Callbacks for buttons ---
             def add_ramp_period():
-                if st.session_state.num_ramp_periods < 5: # Set a reasonable max of 5 periods
+                if st.session_state.num_ramp_periods < 5:
                     st.session_state.num_ramp_periods += 1
             def remove_ramp_period():
                 if st.session_state.num_ramp_periods > 1:
@@ -127,52 +137,62 @@ with st.sidebar:
 
             ramp_fee_tiers = {}
             last_month = 1
+            
+            default_ramp_values = [
+                {'month': 1, 'fee': 14500},
+                {'month': 6, 'fee': 35000},
+                {'month': 12, 'fee': 45000}
+            ]
 
-            # --- Dynamic Input Fields ---
             for i in range(st.session_state.num_ramp_periods):
                 st.markdown(f"**Period {i + 1}**")
                 cols = st.columns(2)
                 
+                default_month = default_ramp_values[i]['month'] if i < len(default_ramp_values) else last_month + 6
+                default_fee = default_ramp_values[i]['fee'] if i < len(default_ramp_values) else 50000
+
                 if i == 0:
                     start_month = 1
                     cols[0].metric("Start Month", "1")
-                    fee = cols[1].number_input("Monthly Fee", value=20000, step=500, key=f'ramp_fee_{i}')
+                    fee = cols[1].number_input("Monthly Fee", value=default_fee, step=500, key=f'ramp_fee_{i}')
                 else:
-                    start_month = cols[0].number_input("Start Month", min_value=last_month + 1, max_value=contract_months, value=last_month + 6, key=f'ramp_month_{i}')
-                    fee = cols[1].number_input("Monthly Fee", value=20000 + (i * 15000), step=500, key=f'ramp_fee_{i}')
+                    start_month = cols[0].number_input("Start Month", min_value=last_month + 1, max_value=contract_months, value=default_month, key=f'ramp_month_{i}')
+                    fee = cols[1].number_input("Monthly Fee", value=default_fee, step=500, key=f'ramp_fee_{i}')
                 
                 ramp_fee_tiers[start_month] = fee
                 last_month = start_month
 
-
 # --- MAIN PAGE FOR OUTPUTS ---
-cost_df, single_flat_fee_tcv = calculate_costs_over_time(
-    total_vessels, contract_months, onboarding_duration, 
+cost_df, single_flat_fee_tco, onboarding_duration = calculate_costs_over_time(
+    total_vessels, contract_months, vessels_per_month,
     pay_per_vessel_price, flat_fee_discount,
     ramp_fee_tiers
 )
 
+# --- Update Sidebar with Calculated Value ---
+onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", value=f"{onboarding_duration} Months")
+
 # --- Summary Metrics with Highlighting ---
-st.header("📊 Financial Summary")
+st.header("📊 Financial Summary (Total Cost of Ownership)")
 st.markdown("The most cost-effective option is highlighted in green.")
-tcv_ppv = cost_df['Pay-Per-Vessel'].sum()
-tcv_ramped = cost_df['Ramped Flat Fee'].sum()
-tcv_list = {
-    "Pay-Per-Vessel TCV": tcv_ppv,
-    "Single Flat Fee TCV": single_flat_fee_tcv,
-    "Ramped Flat Fee TCV": tcv_ramped
+tco_ppv = cost_df['Pay-Per-Vessel'].sum()
+tco_ramped = cost_df['Ramped Flat Fee'].sum()
+tco_list = {
+    "Pay-Per-Vessel TCO": tco_ppv,
+    "Single Flat Fee TCO": single_flat_fee_tco,
+    "Ramped Flat Fee TCO": tco_ramped
 }
-min_tcv_label = min(tcv_list, key=tcv_list.get)
-max_tcv_value = max(tcv_list.values())
+min_tco_label = min(tco_list, key=tco_list.get)
+max_tco_value = max(tco_list.values())
 
 cols = st.columns(3)
-metric_labels_ordered = ["Pay-Per-Vessel TCV", "Ramped Flat Fee TCV", "Single Flat Fee TCV"]
+metric_labels_ordered = ["Pay-Per-Vessel TCO", "Ramped Flat Fee TCO", "Single Flat Fee TCO"]
 
 for i, label in enumerate(metric_labels_ordered):
-    value = tcv_list[label]
+    value = tco_list[label]
     delta_val = None
-    if label == min_tcv_label and value < max_tcv_value:
-        savings = max_tcv_value - value
+    if label == min_tco_label and value < max_tco_value:
+        savings = max_tco_value - value
         delta_val = -savings
     
     cols[i].metric(
@@ -190,13 +210,13 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Price Per Vessel")
     st.markdown("Shows the effective monthly price per vessel at different fleet sizes.")
-    vessels_range = range(1, total_vessels + 1)
-    avg_monthly_ramped_fee = tcv_ramped / contract_months if contract_months > 0 else 0
+    vessels_range = range(1, total_vessels + 1) if total_vessels > 0 else range(1,2)
+    avg_monthly_ramped_fee = tco_ramped / contract_months if contract_months > 0 else 0
 
     price_per_vessel_data = {
         'Number of Vessels': vessels_range,
         'Pay-Per-Vessel': [pay_per_vessel_price] * len(vessels_range),
-        'Single Flat Fee': [(single_flat_fee_tcv / contract_months) / v if v > 0 else 0 for v in vessels_range],
+        'Single Flat Fee': [(single_flat_fee_tco / contract_months) / v if v > 0 else 0 for v in vessels_range],
         'Ramped Flat Fee': [avg_monthly_ramped_fee / v if v > 0 else 0 for v in vessels_range]
     }
     ppv_df = pd.DataFrame(price_per_vessel_data)
@@ -231,9 +251,35 @@ with col2:
         labels={'Monthly Cost': f'Monthly Cost ({currency})'},
         title='<b>Monthly Cost Comparison</b>'
     )
-    # Make the Ramped fee a step chart
     fig_monthly.update_traces(selector={"name": "Ramped Flat Fee"}, line_shape='hv')
+    fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
     st.plotly_chart(fig_monthly, use_container_width=True)
+
+# --- NEW CUMULATIVE TCO GRAPH ---
+st.markdown("---")
+st.header("🕰️ Cumulative Cost Over Time")
+st.markdown("This graph shows the total investment accumulating over the contract period, making it easy to see break-even points.")
+
+cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Single Flat Fee', 'Cumulative Ramped Flat Fee']
+plot_df_cumulative = cost_df.melt(
+    id_vars='Month',
+    value_vars=cumulative_cols,
+    var_name='Pricing Model',
+    value_name='Cumulative TCO'
+)
+# Clean up names for the legend by removing 'Cumulative'
+plot_df_cumulative['Pricing Model'] = plot_df_cumulative['Pricing Model'].str.replace('Cumulative ', '')
+
+fig_cumulative = px.line(
+    plot_df_cumulative,
+    x='Month',
+    y='Cumulative TCO',
+    color='Pricing Model',
+    labels={'Cumulative TCO': f'Cumulative TCO ({currency})'},
+    title='<b>Cumulative TCO Comparison</b>'
+)
+st.plotly_chart(fig_cumulative, use_container_width=True)
+
 
 # --- DATA TABLE ---
 st.markdown("---")
