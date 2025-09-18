@@ -28,7 +28,7 @@ def get_fee_for_month(month, tiers_dict):
     return fee
 
 def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
-                              pay_per_vessel_price, single_flat_fee_tco,
+                              pay_per_vessel_price, single_flat_monthly_fee,
                               scheduled_fee_tiers):
     """Calculates monthly and cumulative costs over time for all three models."""
     
@@ -50,8 +50,8 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
 
     # 3. Calculate monthly costs for each model
     costs_ppv = [pay_per_vessel_price * v for v in monthly_vessels]
-    effective_monthly_single_flat = single_flat_fee_tco / contract_months if contract_months > 0 else 0
-    costs_single_flat = [effective_monthly_single_flat] * contract_months
+    # The monthly cost is simply the user's input
+    costs_single_flat = [single_flat_monthly_fee] * contract_months
     costs_scheduled_flat = [get_fee_for_month(m, scheduled_fee_tiers) for m in range(1, contract_months + 1)]
 
     # 4. Create DataFrame
@@ -150,18 +150,18 @@ with st.sidebar:
         st.markdown("---")
         
         st.markdown("**Model 3: Single Flat Fee**")
-        single_flat_fee_tco = st.number_input(
-            f"Total Cost of Ownership ({currency})",
+        single_flat_monthly_fee = st.number_input(
+            f"Flat Monthly Fee ({currency})",
             min_value=0,
-            value=3500000,
-            step=10000,
-            help="The total price for the entire fleet for the whole contract period."
+            value=35000,
+            step=500,
+            help="A single, fixed fee charged every month for the entire contract period."
         )
 
 # --- MAIN PAGE FOR OUTPUTS ---
 cost_df, onboarding_duration = calculate_costs_over_time(
     total_vessels, contract_months, vessels_per_month,
-    pay_per_vessel_price, single_flat_fee_tco,
+    pay_per_vessel_price, single_flat_monthly_fee,
     scheduled_fee_tiers
 )
 
@@ -172,6 +172,9 @@ onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", v
 st.header("📊 Financial Summary (Total Cost of Ownership)")
 tco_ppv = cost_df['Pay-Per-Vessel'].sum()
 tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
+# Calculate TCO for Single Flat Fee model based on the monthly input
+single_flat_fee_tco = single_flat_monthly_fee * contract_months
+
 tco_list = {
     "Pay-Per-Vessel TCO": tco_ppv,
     "Scheduled Flat Fee TCO": tco_scheduled,
@@ -200,7 +203,7 @@ with col1:
         'Number of Vessels': vessels_range,
         'Pay-Per-Vessel': [pay_per_vessel_price] * len(vessels_range),
         'Scheduled Flat Fee': [avg_monthly_scheduled_fee / v if v > 0 else 0 for v in vessels_range],
-        'Single Flat Fee': [(single_flat_fee_tco / contract_months) / v if v > 0 else 0 for v in vessels_range]
+        'Single Flat Fee': [single_flat_monthly_fee / v if v > 0 else 0 for v in vessels_range] # Use monthly fee directly
     }
     ppv_df = pd.DataFrame(price_per_vessel_data)
 
