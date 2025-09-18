@@ -226,7 +226,6 @@ with col1:
         y='Price',
         color='Pricing Model',
         labels={'Price': f'Price/Vessel ({currency})'},
-        title='<b>Effective Price Per Vessel at Scale</b>'
     )
     fig_ppv.update_yaxes(range=[0, 5000])
     st.plotly_chart(fig_ppv, use_container_width=True)
@@ -248,7 +247,6 @@ with col2:
         y='Monthly Cost',
         color='Pricing Model',
         labels={'Monthly Cost': f'Monthly Cost ({currency})'},
-        title='<b>Monthly Cost Comparison</b>'
     )
     fig_monthly.update_traces(selector={"name": "Ramped Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
