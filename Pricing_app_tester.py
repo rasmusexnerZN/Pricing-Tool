@@ -153,7 +153,7 @@ with st.sidebar:
         single_flat_fee_tco = st.number_input(
             f"Total Cost of Ownership ({currency})",
             min_value=0,
-            value=1800000,
+            value=3500000,
             step=10000,
             help="The total price for the entire fleet for the whole contract period."
         )
