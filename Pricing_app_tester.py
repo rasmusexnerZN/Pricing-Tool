@@ -199,7 +199,6 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Price Per Vessel")
-    st.markdown("Shows the effective monthly price per vessel at different fleet sizes.")
     vessels_range = range(1, total_vessels + 1) if total_vessels > 0 else range(1,2)
     avg_monthly_scheduled_fee = tco_scheduled / contract_months if contract_months > 0 else 0
 
@@ -223,7 +222,6 @@ with col1:
 
 with col2:
     st.subheader("Monthly Cost Over Time")
-    st.markdown("Shows the expected monthly cash flow based on the onboarding plan.")
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
@@ -246,7 +244,7 @@ with col2:
 # --- NEW CUMULATIVE TCO GRAPH ---
 st.markdown("---")
 st.header("🕰️ Cumulative Cost Over Time")
-st.markdown("This graph shows the total investment accumulating over the contract period, making it easy to see break-even points.")
+
 
 cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Single Flat Fee', 'Cumulative Scheduled Flat Fee']
 plot_df_cumulative = cost_df.melt(
