@@ -28,7 +28,7 @@ def get_fee_for_month(month, tiers_dict):
     return fee
 
 def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
-                              pay_per_vessel_price, flat_fee_discount,
+                              pay_per_vessel_price, single_flat_fee_tco,
                               scheduled_fee_tiers):
     """Calculates monthly and cumulative costs over time for all three models."""
     
@@ -38,12 +38,7 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
     else:
         onboarding_duration = 0
 
-    # 2. Calculate the Single Flat Fee TCO
-    base_tco = pay_per_vessel_price * total_vessels * contract_months
-    discount_multiplier = 1 - (flat_fee_discount / 100)
-    single_flat_fee_tco = base_tco * discount_multiplier
-
-    # 3. Generate the monthly vessel count with remainder logic
+    # 2. Generate the monthly vessel count with remainder logic
     monthly_vessels = []
     current_vessels = 0
     for month in range(1, contract_months + 1):
@@ -53,13 +48,13 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
             current_vessels += vessels_to_add
         monthly_vessels.append(current_vessels)
 
-    # 4. Calculate monthly costs for each model
+    # 3. Calculate monthly costs for each model
     costs_ppv = [pay_per_vessel_price * v for v in monthly_vessels]
     effective_monthly_single_flat = single_flat_fee_tco / contract_months if contract_months > 0 else 0
     costs_single_flat = [effective_monthly_single_flat] * contract_months
     costs_scheduled_flat = [get_fee_for_month(m, scheduled_fee_tiers) for m in range(1, contract_months + 1)]
 
-    # 5. Create DataFrame
+    # 4. Create DataFrame
     df = pd.DataFrame({
         'Month': range(1, contract_months + 1),
         'Onboarded Vessels': monthly_vessels,
@@ -68,12 +63,12 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
         'Single Flat Fee': costs_single_flat,
     })
     
-    # 6. Calculate Cumulative Costs
+    # 5. Calculate Cumulative Costs
     df['Cumulative Pay-Per-Vessel'] = df['Pay-Per-Vessel'].cumsum()
     df['Cumulative Scheduled Flat Fee'] = df['Scheduled Flat Fee'].cumsum()
     df['Cumulative Single Flat Fee'] = df['Single Flat Fee'].cumsum()
     
-    return df, single_flat_fee_tco, onboarding_duration
+    return df, onboarding_duration
 
 # --- UI & APP LOGIC ---
 
@@ -155,18 +150,18 @@ with st.sidebar:
         st.markdown("---")
         
         st.markdown("**Model 3: Single Flat Fee**")
-        flat_fee_discount = st.slider(
-            "Discount for Flat Fee (%)", 
-            min_value=0, 
-            max_value=100, 
-            value=25,
-            help="The discount applied to the total potential Pay-Per-Vessel cost to calculate this fee."
+        single_flat_fee_tco = st.number_input(
+            f"Total Cost of Ownership ({currency})",
+            min_value=0,
+            value=1800000,
+            step=10000,
+            help="The total price for the entire fleet for the whole contract period."
         )
 
 # --- MAIN PAGE FOR OUTPUTS ---
-cost_df, single_flat_fee_tco, onboarding_duration = calculate_costs_over_time(
+cost_df, onboarding_duration = calculate_costs_over_time(
     total_vessels, contract_months, vessels_per_month,
-    pay_per_vessel_price, flat_fee_discount,
+    pay_per_vessel_price, single_flat_fee_tco,
     scheduled_fee_tiers
 )
 
