@@ -202,7 +202,7 @@ st.header("📈 Detailed Analysis")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Effective Price/Vessel (Contract Average)")
+    st.subheader("Contract Average Price Per Vessel")
     
     total_vessel_months = cost_df['Onboarded Vessels'].sum()
 
