@@ -202,7 +202,7 @@ st.markdown("<h2 style='text-align: center;'>📈 Detailed Analysis</h2>", unsaf
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Effective Cost of Ownership per Vessel")
+    st.subheader("Contract Average Price Per Vessel")
     
     total_vessel_months = cost_df['Onboarded Vessels'].sum()
 
@@ -244,6 +244,28 @@ with col1:
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=dict(font=dict(size=14)))
+
+    # --- Add Savings Annotations ---
+    # Calculate savings for Scheduled vs. PPV
+    if avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
+        saving_scheduled_vs_ppv = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
+        fig_bar.add_annotation(
+            x='Scheduled Flat Fee', y=avg_price_scheduled,
+            text=f"<b>{saving_scheduled_vs_ppv:.1f}% saving</b><br>vs. Pay-Per-Vessel",
+            showarrow=False, yshift=25,
+            font=dict(color="#186e80", size=14)
+        )
+
+    # Calculate savings for Single Flat Fee vs. Scheduled
+    if avg_price_scheduled > 0 and avg_price_single_flat < avg_price_scheduled:
+        saving_single_vs_scheduled = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
+        fig_bar.add_annotation(
+            x='Single Flat Fee', y=avg_price_single_flat,
+            text=f"<b>{saving_single_vs_scheduled:.1f}% saving</b><br>vs. Scheduled",
+            showarrow=False, yshift=25,
+            font=dict(color="#4fb18c", size=14)
+        )
+        
     st.plotly_chart(fig_bar, use_container_width=True)
 
 
