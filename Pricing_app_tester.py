@@ -171,7 +171,7 @@ onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", v
 # --- Define Color Palette ---
 color_map = {
     'Pay-Per-Vessel': '#186e80',
-    'Scheduled Flat Fee': '#d0e2e6',
+    'Scheduled Flat Fee': '#003143', # <-- Updated Color
     'Single Flat Fee': '#4fb18c'
 }
 
