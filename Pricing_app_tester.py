@@ -175,27 +175,17 @@ color_map = {
     'Single Flat Fee': '#4fb18c'
 }
 
-# --- Summary Metrics (Delta Removed) ---
-st.header("📊 Financial Summary (Total Cost of Ownership)")
+# --- CALCULATIONS FOR CHARTS ---
+# (These calculations were previously under the summary section but are needed for the charts below)
 tco_ppv = cost_df['Pay-Per-Vessel'].sum()
 tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
-# Calculate TCO for Single Flat Fee model based on the monthly input
 single_flat_fee_tco = single_flat_monthly_fee * contract_months
-
 tco_list = {
     "Pay-Per-Vessel TCO": tco_ppv,
     "Scheduled Flat Fee TCO": tco_scheduled,
     "Single Flat Fee TCO": single_flat_fee_tco
 }
 
-cols = st.columns(3)
-metric_labels_ordered = ["Pay-Per-Vessel TCO", "Scheduled Flat Fee TCO", "Single Flat Fee TCO"]
-
-for i, label in enumerate(metric_labels_ordered):
-    value = tco_list[label]
-    cols[i].metric(label=label, value=f"{currency} {value:,.0f}")
-
-st.markdown("---")
 
 # --- DETAILED VISUALIZATIONS (SIDE-BY-SIDE) ---
 st.header("📈 Detailed Cost of Ownership Analysis")
