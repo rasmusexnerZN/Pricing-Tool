@@ -198,11 +198,11 @@ for i, label in enumerate(metric_labels_ordered):
 st.markdown("---")
 
 # --- DETAILED VISUALIZATIONS (SIDE-BY-SIDE) ---
-st.header("📈 Detailed Analysis")
+st.header("📈 Detailed Cost of Ownership Analysis")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Effective Price/Vessel (Contract Average)")
+    st.subheader("Effective Cost of Ownership per Vessel")
     
     total_vessel_months = cost_df['Onboarded Vessels'].sum()
 
@@ -268,7 +268,7 @@ with col1:
 
 
 with col2:
-    st.subheader("Projected Monthly Cash Flow")
+    st.subheader("Monthly Cost of Ownership")
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
@@ -293,7 +293,7 @@ with col2:
 
 # --- CUMULATIVE TCO SECTION ---
 st.markdown("---")
-st.header("🕰️ Cumulative Spend Analysis")
+st.header("🕰️ Cumulative Cost of Ownership")
 col3, col4 = st.columns(2)
 
 with col3:
