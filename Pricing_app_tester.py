@@ -168,6 +168,13 @@ cost_df, onboarding_duration = calculate_costs_over_time(
 # --- Update Sidebar with Calculated Value ---
 onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", value=f"{onboarding_duration} Months")
 
+# --- Define Color Palette ---
+color_map = {
+    'Pay-Per-Vessel': '#186e80',
+    'Scheduled Flat Fee': '#d0e2e6',
+    'Single Flat Fee': '#4fb18c'
+}
+
 # --- Summary Metrics (Delta Removed) ---
 st.header("📊 Financial Summary (Total Cost of Ownership)")
 tco_ppv = cost_df['Pay-Per-Vessel'].sum()
@@ -197,13 +204,10 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("Average Price Per Vessel")
     
-    # --- Calculations for the new bar chart ---
     total_vessel_months = cost_df['Onboarded Vessels'].sum()
 
     if total_vessel_months > 0:
-        # For PPV, the avg price is just the set price
         avg_price_ppv = pay_per_vessel_price
-        # For flat fee models, it's TCO / total vessel months
         avg_price_scheduled = tco_scheduled / total_vessel_months
         avg_price_single_flat = single_flat_fee_tco / total_vessel_months
     else:
@@ -225,7 +229,6 @@ with col1:
     }
     bar_df = pd.DataFrame(bar_data)
     
-    # Order the bars logically
     bar_df['Pricing Model'] = pd.Categorical(bar_df['Pricing Model'], ["Pay-Per-Vessel", "Scheduled Flat Fee", "Single Flat Fee"])
 
     fig_bar = px.bar(
@@ -234,7 +237,8 @@ with col1:
         y='Average Price Per Vessel',
         color='Pricing Model',
         labels={'Average Price Per Vessel': f'Avg. Price/Vessel ({currency})'},
-        text_auto='.0f'
+        text_auto='.0f',
+        color_discrete_map=color_map
     )
     st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -255,6 +259,7 @@ with col2:
         y='Monthly Cost',
         color='Pricing Model',
         labels={'Monthly Cost': f'Monthly Cost ({currency})'},
+        color_discrete_map=color_map
     )
     fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
@@ -271,7 +276,6 @@ plot_df_cumulative = cost_df.melt(
     var_name='Pricing Model',
     value_name='Cumulative TCO'
 )
-# Clean up names for the legend by removing 'Cumulative'
 plot_df_cumulative['Pricing Model'] = plot_df_cumulative['Pricing Model'].str.replace('Cumulative ', '')
 
 fig_cumulative = px.line(
@@ -279,7 +283,8 @@ fig_cumulative = px.line(
     x='Month',
     y='Cumulative TCO',
     color='Pricing Model',
-    labels={'Cumulative TCO': f'Cumulative TCO ({currency})'}
+    labels={'Cumulative TCO': f'Cumulative TCO ({currency})'},
+    color_discrete_map=color_map
 )
 st.plotly_chart(fig_cumulative, use_container_width=True)
 
