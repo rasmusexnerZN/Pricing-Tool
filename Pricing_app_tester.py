@@ -10,6 +10,21 @@ st.set_page_config(
     layout="wide",
 )
 
+# --- CUSTOM CSS FOR STYLING ---
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #deefe8; /* Main content area background */
+    }
+    .stSidebar {
+        background-color: #8cb6c0; /* Sidebar background */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # --- INITIALIZE SESSION STATE ---
 # Default to 3 periods for the Scheduled Fee model
 if 'num_scheduled_periods' not in st.session_state:
@@ -350,23 +365,4 @@ with col4:
         )
     
     if tco_scheduled > 0 and single_flat_fee_tco < tco_scheduled:
-        saving_single_vs_scheduled_tco = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
-        fig_tco_bar.add_annotation(
-            x='Single Flat Fee', y=single_flat_fee_tco,
-            text=f"<b>{saving_single_vs_scheduled_tco:.1f}% saving</b><br>vs. Scheduled",
-            showarrow=False, yshift=25,
-            font=dict(color="#4fb18c", size=14)
-        )
-        
-    st.plotly_chart(fig_tco_bar, use_container_width=True)
-
-
-# --- DATA TABLE ---
-st.markdown("---")
-st.header("🔢 Detailed Data Breakdown")
-with st.expander("Click to view the month-by-month data"):
-    display_df = cost_df.copy()
-    for col in display_df.columns:
-        if col not in ['Month', 'Onboarded Vessels']:
-            display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}")
-    st.dataframe(display_df)
+        saving_single_vs_
