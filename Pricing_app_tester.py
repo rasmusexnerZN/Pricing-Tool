@@ -17,37 +17,8 @@ st.markdown(
     .stApp {
         background-color: #deefe8; /* Main content area background */
     }
-    .stSidebar {
+    [data-testid="stSidebar"] {
         background-color: #8cb6c0; /* Sidebar background */
-    }
-    /* Remove white background from Plotly figures and make plot area transparent */
-    .stPlotlyChart {
-        background-color: transparent !important;
-    }
-    .modebar {
-        background-color: transparent !important;
-    }
-    /* Style for Streamlit input widgets in the sidebar */
-    .st-dg, .st-do, .st-dk, .st-dl, .st-dm, .st-d_ { /* Target number_input, selectbox, and other relevant input widgets */
-        background-color: #deefe8; /* Match main page background */
-    }
-    .st-bd { /* Expander background */
-        background-color: #deefe8; /* Match main page background */
-    }
-    .stTabs [data-baseweb="tab-list"] button {
-        background-color: #8cb6c0; /* Match sidebar background for inactive tabs */
-        color: white; /* Adjust text color for tabs */
-    }
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-        background-color: #deefe8; /* Match main page background for active tab */
-        color: black; /* Adjust text color for active tab */
-    }
-    /* Adjust text color for sidebar headers for better contrast */
-    .stSidebar .st-emotion-cache-1tmx6s8 { /* Target st.header text */
-        color: white;
-    }
-    .stSidebar .st-emotion-cache-16zhu4l { /* Target st.subheader text */
-        color: white;
     }
     </style>
     """,
@@ -289,11 +260,11 @@ with col1:
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(
         legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot background
-        paper_bgcolor='rgba(0,0,0,0)', # Transparent paper background
-        font=dict(color="black"),      # Set default font color to black for text elements
-        xaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")), # X-axis text and title
-        yaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black"))  # Y-axis text and title
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="black"),
+        xaxis=dict(tickfont=dict(color="black")),
+        yaxis=dict(tickfont=dict(color="black"))
     )
 
     # Add Savings Annotations for Average Price
@@ -341,11 +312,11 @@ with col2:
     fig_monthly.update_yaxes(tickformat=',')
     fig_monthly.update_layout(
         legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot background
-        paper_bgcolor='rgba(0,0,0,0)', # Transparent paper background
-        font=dict(color="black"),      # Set default font color to black for text elements
-        xaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")), # X-axis text and title
-        yaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black"))  # Y-axis text and title
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="black"),
+        xaxis=dict(tickfont=dict(color="black")),
+        yaxis=dict(tickfont=dict(color="black"))
     )
     st.plotly_chart(fig_monthly, use_container_width=True)
 
@@ -376,11 +347,11 @@ with col3:
     fig_cumulative.update_yaxes(tickformat=',')
     fig_cumulative.update_layout(
         legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot background
-        paper_bgcolor='rgba(0,0,0,0)', # Transparent paper background
-        font=dict(color="black"),      # Set default font color to black for text elements
-        xaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")), # X-axis text and title
-        yaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black"))  # Y-axis text and title
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="black"),
+        xaxis=dict(tickfont=dict(color="black")),
+        yaxis=dict(tickfont=dict(color="black"))
     )
     st.plotly_chart(fig_cumulative, use_container_width=True)
 
@@ -404,11 +375,11 @@ with col4:
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(
         legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent plot background
-        paper_bgcolor='rgba(0,0,0,0)', # Transparent paper background
-        font=dict(color="black"),      # Set default font color to black for text elements
-        xaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")), # X-axis text and title
-        yaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black"))  # Y-axis text and title
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="black"),
+        xaxis=dict(tickfont=dict(color="black")),
+        yaxis=dict(tickfont=dict(color="black"))
     )
 
     # Add Savings Annotations for Total TCO
