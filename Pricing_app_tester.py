@@ -45,7 +45,7 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
                               scheduled_fee_tiers):
     """Calculates monthly and cumulative costs over time for all three models."""
     
-    # 1. Calculate the Onboarding Duration
+    # 1. Calculate the Onboarding Duration 
     if vessels_per_month > 0:
         onboarding_duration = math.ceil(total_vessels / vessels_per_month)
     else:
@@ -113,9 +113,9 @@ with st.sidebar:
 
         st.markdown("**Model 1: Pay-Per-Vessel**")
         pay_per_vessel_price = st.number_input(
-            f"Price Per Vessel Per Month ({currency})",
-            min_value=0,
-            value=1000,
+            f"Price Per Vessel Per Month ({currency})", 
+            min_value=0, 
+            value=1000, 
             step=50
         )
         st.markdown("---")
@@ -254,26 +254,11 @@ with col1:
         color_discrete_map=color_map
     )
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
-    
-    # --- Y-AXIS CHANGES ---
-    fig_bar.update_yaxes(
-        tickformat=',',
-        gridcolor='black',
-        gridwidth=1,
-        gridash='dot',
-        showgrid=True,
-        tickfont_color='black',
-        title_font_color='black'
-    )
-    # --- X-AXIS CHANGES ---
-    fig_bar.update_xaxes(
-        title_text="",
-        tickfont_size=14,
-        tickfont_color='black'
-    )
-    # --- LAYOUT CHANGES ---
+    fig_bar.update_yaxes(tickformat=',')
+    fig_bar.update_xaxes(title_text="", tickfont_size=14)
+    # --- CHANGE IS HERE ---
     fig_bar.update_layout(
-        legend=dict(font=dict(size=14, color='black')),
+        legend=dict(font=dict(size=14)),
         plot_bgcolor='rgba(0, 0, 0, 0)',
         paper_bgcolor='rgba(0, 0, 0, 0)'
     )
@@ -304,9 +289,9 @@ with col2:
     st.subheader("Projected Monthly Cash Flow")
     
     plot_df_monthly = cost_df.melt(
-        id_vars='Month',
-        value_vars=['Pay-Per-Vessel', 'Scheduled Flat Fee', 'Single Flat Fee'],
-        var_name='Pricing Model',
+        id_vars='Month', 
+        value_vars=['Pay-Per-Vessel', 'Scheduled Flat Fee', 'Single Flat Fee'], 
+        var_name='Pricing Model', 
         value_name='Monthly Cost'
     )
     
@@ -315,30 +300,15 @@ with col2:
         x='Month',
         y='Monthly Cost',
         color='Pricing Model',
-        labels={'Monthly Cost': f'Monthly Cost ({currency})', 'Month': 'Month'},
+        labels={'Monthly Cost': f'Monthly Cost ({currency})'},
         color_discrete_map=color_map
     )
     fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
-
-    # --- Y-AXIS CHANGES ---
-    fig_monthly.update_yaxes(
-        tickformat=',',
-        gridcolor='black',
-        gridwidth=1,
-        gridash='dot',
-        showgrid=True,
-        tickfont_color='black',
-        title_font_color='black'
-    )
-    # --- X-AXIS CHANGES ---
-    fig_monthly.update_xaxes(
-        tickfont_color='black',
-        title_font_color='black'
-    )
-    # --- LAYOUT CHANGES ---
+    fig_monthly.update_yaxes(tickformat=',')
+    # --- CHANGE IS HERE ---
     fig_monthly.update_layout(
-        legend=dict(font=dict(size=14, color='black')),
+        legend=dict(font=dict(size=14)),
         plot_bgcolor='rgba(0, 0, 0, 0)',
         paper_bgcolor='rgba(0, 0, 0, 0)'
     )
@@ -365,27 +335,13 @@ with col3:
         x='Month',
         y='Cumulative TCO',
         color='Pricing Model',
-        labels={'Cumulative TCO': f'Cumulative TCO ({currency})', 'Month': 'Month'},
+        labels={'Cumulative TCO': f'Cumulative TCO ({currency})'},
         color_discrete_map=color_map
     )
-    # --- Y-AXIS CHANGES ---
-    fig_cumulative.update_yaxes(
-        tickformat=',',
-        gridcolor='black',
-        gridwidth=1,
-        gridash='dot',
-        showgrid=True,
-        tickfont_color='black',
-        title_font_color='black'
-    )
-    # --- X-AXIS CHANGES ---
-    fig_cumulative.update_xaxes(
-        tickfont_color='black',
-        title_font_color='black'
-    )
-    # --- LAYOUT CHANGES ---
+    fig_cumulative.update_yaxes(tickformat=',')
+    # --- CHANGE IS HERE ---
     fig_cumulative.update_layout(
-        legend=dict(font=dict(size=14, color='black')),
+        legend=dict(font=dict(size=14)),
         plot_bgcolor='rgba(0, 0, 0, 0)',
         paper_bgcolor='rgba(0, 0, 0, 0)'
     )
@@ -407,26 +363,11 @@ with col4:
         color_discrete_map=color_map
     )
     fig_tco_bar.update_traces(textfont_size=16)
-    
-    # --- Y-AXIS CHANGES ---
-    fig_tco_bar.update_yaxes(
-        tickformat=',',
-        gridcolor='black',
-        gridwidth=1,
-        gridash='dot',
-        showgrid=True,
-        tickfont_color='black',
-        title_font_color='black'
-    )
-    # --- X-AXIS CHANGES ---
-    fig_tco_bar.update_xaxes(
-        title_text="",
-        tickfont_size=14,
-        tickfont_color='black'
-    )
-    # --- LAYOUT CHANGES ---
+    fig_tco_bar.update_yaxes(tickformat=',')
+    fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
+    # --- CHANGE IS HERE ---
     fig_tco_bar.update_layout(
-        legend=dict(font=dict(size=14, color='black')),
+        legend=dict(font=dict(size=14)),
         plot_bgcolor='rgba(0, 0, 0, 0)',
         paper_bgcolor='rgba(0, 0, 0, 0)'
     )
