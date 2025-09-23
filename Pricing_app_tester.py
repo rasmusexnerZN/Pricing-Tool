@@ -20,6 +20,35 @@ st.markdown(
     .stSidebar {
         background-color: #8cb6c0; /* Sidebar background */
     }
+    /* Remove white background from Plotly figures */
+    .stPlotlyChart {
+        background-color: transparent !important;
+    }
+    .modebar {
+        background-color: transparent !important;
+    }
+    /* Style for Streamlit input widgets in the sidebar */
+    .st-dg, .st-do, .st-dk, .st-dl, .st-dm, .st-d_ { /* Target number_input, selectbox, and other relevant input widgets */
+        background-color: #deefe8; /* Match main page background */
+    }
+    .st-bd { /* Expander background */
+        background-color: #deefe8; /* Match main page background */
+    }
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #8cb6c0; /* Match sidebar background for inactive tabs */
+        color: white; /* Adjust text color for tabs */
+    }
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: #deefe8; /* Match main page background for active tab */
+        color: black; /* Adjust text color for active tab */
+    }
+    /* Adjust text color for sidebar headers for better contrast */
+    .stSidebar .st-emotion-cache-1tmx6s8 { /* Target st.header text */
+        color: white;
+    }
+    .stSidebar .st-emotion-cache-16zhu4l { /* Target st.subheader text */
+        color: white;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -258,7 +287,11 @@ with col1:
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
-    fig_bar.update_layout(legend=dict(font=dict(size=14)))
+    fig_bar.update_layout(
+        legend=dict(font=dict(size=14)),
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)'  # Transparent background
+    )
 
     # Add Savings Annotations for Average Price
     if avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
@@ -303,7 +336,11 @@ with col2:
     fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
     fig_monthly.update_yaxes(tickformat=',')
-    fig_monthly.update_layout(legend=dict(font=dict(size=14)))
+    fig_monthly.update_layout(
+        legend=dict(font=dict(size=14)),
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)'  # Transparent background
+    )
     st.plotly_chart(fig_monthly, use_container_width=True)
 
 # --- CUMULATIVE TCO SECTION ---
@@ -331,7 +368,11 @@ with col3:
         color_discrete_map=color_map
     )
     fig_cumulative.update_yaxes(tickformat=',')
-    fig_cumulative.update_layout(legend=dict(font=dict(size=14)))
+    fig_cumulative.update_layout(
+        legend=dict(font=dict(size=14)),
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)'  # Transparent background
+    )
     st.plotly_chart(fig_cumulative, use_container_width=True)
 
 with col4:
@@ -352,7 +393,11 @@ with col4:
     fig_tco_bar.update_traces(textfont_size=16)
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
-    fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
+    fig_tco_bar.update_layout(
+        legend=dict(font=dict(size=14)),
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)'  # Transparent background
+    )
 
     # Add Savings Annotations for Total TCO
     if tco_ppv > 0 and tco_scheduled < tco_ppv:
@@ -365,4 +410,23 @@ with col4:
         )
     
     if tco_scheduled > 0 and single_flat_fee_tco < tco_scheduled:
-        saving_single_vs_
+        saving_single_vs_scheduled_tco = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
+        fig_tco_bar.add_annotation(
+            x='Single Flat Fee', y=single_flat_fee_tco,
+            text=f"<b>{saving_single_vs_scheduled_tco:.1f}% saving</b><br>vs. Scheduled",
+            showarrow=False, yshift=25,
+            font=dict(color="#4fb18c", size=14)
+        )
+        
+    st.plotly_chart(fig_tco_bar, use_container_width=True)
+
+
+# --- DATA TABLE ---
+st.markdown("---")
+st.header("🔢 Detailed Data Breakdown")
+with st.expander("Click to view the month-by-month data"):
+    display_df = cost_df.copy()
+    for col in display_df.columns:
+        if col not in ['Month', 'Onboarded Vessels']:
+            display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}")
+    st.dataframe(display_df)
