@@ -198,11 +198,11 @@ for i, label in enumerate(metric_labels_ordered):
 st.markdown("---")
 
 # --- DETAILED VISUALIZATIONS (SIDE-BY-SIDE) ---
-st.markdown("<h2 style='text-align: center;'>📈 Detailed Analysis</h2>", unsafe_allow_html=True)
+st.header("📈 Detailed Analysis")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Contract Average Price Per Vessel")
+    st.subheader("Effective Price/Vessel (Contract Average)")
     
     total_vessel_months = cost_df['Onboarded Vessels'].sum()
 
@@ -245,8 +245,7 @@ with col1:
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- Add Savings Annotations ---
-    # Calculate savings for Scheduled vs. PPV
+    # Add Savings Annotations for Average Price
     if avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
         saving_scheduled_vs_ppv = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
         fig_bar.add_annotation(
@@ -256,7 +255,6 @@ with col1:
             font=dict(color="#186e80", size=14)
         )
 
-    # Calculate savings for Single Flat Fee vs. Scheduled
     if avg_price_scheduled > 0 and avg_price_single_flat < avg_price_scheduled:
         saving_single_vs_scheduled = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
         fig_bar.add_annotation(
@@ -270,7 +268,7 @@ with col1:
 
 
 with col2:
-    st.subheader("Cost of Ownership per Month")
+    st.subheader("Projected Monthly Cash Flow")
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
@@ -295,7 +293,7 @@ with col2:
 
 # --- CUMULATIVE TCO SECTION ---
 st.markdown("---")
-st.markdown("<h2 style='text-align: center;'>🕰️ Cumulative Spend Analysis</h2>", unsafe_allow_html=True)
+st.header("🕰️ Cumulative Spend Analysis")
 col3, col4 = st.columns(2)
 
 with col3:
@@ -340,6 +338,26 @@ with col4:
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
+
+    # Add Savings Annotations for Total TCO
+    if tco_ppv > 0 and tco_scheduled < tco_ppv:
+        saving_scheduled_vs_ppv_tco = ((tco_ppv - tco_scheduled) / tco_ppv) * 100
+        fig_tco_bar.add_annotation(
+            x='Scheduled Flat Fee', y=tco_scheduled,
+            text=f"<b>{saving_scheduled_vs_ppv_tco:.1f}% saving</b><br>vs. Pay-Per-Vessel",
+            showarrow=False, yshift=25,
+            font=dict(color="#186e80", size=14)
+        )
+    
+    if tco_scheduled > 0 and single_flat_fee_tco < tco_scheduled:
+        saving_single_vs_scheduled_tco = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
+        fig_tco_bar.add_annotation(
+            x='Single Flat Fee', y=single_flat_fee_tco,
+            text=f"<b>{saving_single_vs_scheduled_tco:.1f}% saving</b><br>vs. Scheduled",
+            showarrow=False, yshift=25,
+            font=dict(color="#4fb18c", size=14)
+        )
+        
     st.plotly_chart(fig_tco_bar, use_container_width=True)
 
 
