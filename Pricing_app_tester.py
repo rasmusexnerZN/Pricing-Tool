@@ -170,8 +170,8 @@ onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", v
 
 # --- Define Color Palette ---
 color_map = {
-    'Pay-Per-Vessel': '#186e80',
-    'Scheduled Flat Fee': '#003143', # <-- Updated Color
+    'Pay-Per-Vessel': '#003143',      # Swapped
+    'Scheduled Flat Fee': '#186e80',  # Swapped
     'Single Flat Fee': '#4fb18c'
 }
 
@@ -265,28 +265,48 @@ with col2:
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
     st.plotly_chart(fig_monthly, use_container_width=True)
 
-# --- NEW CUMULATIVE TCO GRAPH ---
+# --- CUMULATIVE TCO SECTION ---
 st.markdown("---")
-st.header("🕰️ Cumulative Cost Over Time")
+st.header("🕰️ Cumulative Cost Analysis")
+col3, col4 = st.columns(2)
 
-cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Scheduled Flat Fee', 'Cumulative Single Flat Fee']
-plot_df_cumulative = cost_df.melt(
-    id_vars='Month',
-    value_vars=cumulative_cols,
-    var_name='Pricing Model',
-    value_name='Cumulative TCO'
-)
-plot_df_cumulative['Pricing Model'] = plot_df_cumulative['Pricing Model'].str.replace('Cumulative ', '')
+with col3:
+    st.subheader("Cumulative TCO Over Time")
+    cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Scheduled Flat Fee', 'Cumulative Single Flat Fee']
+    plot_df_cumulative = cost_df.melt(
+        id_vars='Month',
+        value_vars=cumulative_cols,
+        var_name='Pricing Model',
+        value_name='Cumulative TCO'
+    )
+    plot_df_cumulative['Pricing Model'] = plot_df_cumulative['Pricing Model'].str.replace('Cumulative ', '')
 
-fig_cumulative = px.line(
-    plot_df_cumulative,
-    x='Month',
-    y='Cumulative TCO',
-    color='Pricing Model',
-    labels={'Cumulative TCO': f'Cumulative TCO ({currency})'},
-    color_discrete_map=color_map
-)
-st.plotly_chart(fig_cumulative, use_container_width=True)
+    fig_cumulative = px.line(
+        plot_df_cumulative,
+        x='Month',
+        y='Cumulative TCO',
+        color='Pricing Model',
+        labels={'Cumulative TCO': f'Cumulative TCO ({currency})'},
+        color_discrete_map=color_map
+    )
+    st.plotly_chart(fig_cumulative, use_container_width=True)
+
+with col4:
+    st.subheader("Final TCO Comparison")
+    
+    tco_df = pd.DataFrame(list(tco_list.items()), columns=['Pricing Model', 'Total Cost'])
+    tco_df['Pricing Model'] = tco_df['Pricing Model'].str.replace(' TCO', '')
+    
+    fig_tco_bar = px.bar(
+        tco_df,
+        x='Pricing Model',
+        y='Total Cost',
+        color='Pricing Model',
+        labels={'Total Cost': f'Final TCO ({currency})'},
+        text_auto='.2s',
+        color_discrete_map=color_map
+    )
+    st.plotly_chart(fig_tco_bar, use_container_width=True)
 
 
 # --- DATA TABLE ---
