@@ -202,7 +202,7 @@ st.markdown("<h2 style='text-align: center;'>📈 Detailed Analysis</h2>", unsaf
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Effective Price/Vessel (Contract Average)")
+    st.subheader("Effective Cost of Ownership per Vessel")
     
     total_vessel_months = cost_df['Onboarded Vessels'].sum()
 
@@ -248,7 +248,7 @@ with col1:
 
 
 with col2:
-    st.subheader("Projected Monthly Cash Flow")
+    st.subheader("Cost of Ownership per Month")
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
