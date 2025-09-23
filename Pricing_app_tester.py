@@ -10,20 +10,18 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- CUSTOM CSS FOR STYLING ---
+# --- CUSTOM CSS FOR BACKGROUND COLOR ---
 st.markdown(
     """
     <style>
     .stApp {
-        background-color: #deefe8; /* Main content area background */
-    }
-    [data-testid="stSidebar"] {
-        background-color: #8cb6c0; /* Sidebar background */
+        background-color: #deefe8;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 # --- INITIALIZE SESSION STATE ---
 # Default to 3 periods for the Scheduled Fee model
@@ -258,14 +256,7 @@ with col1:
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
-    fig_bar.update_layout(
-        legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="black"),
-        xaxis=dict(tickfont=dict(color="black")),
-        yaxis=dict(tickfont=dict(color="black"))
-    )
+    fig_bar.update_layout(legend=dict(font=dict(size=14)))
 
     # Add Savings Annotations for Average Price
     if avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
@@ -310,14 +301,7 @@ with col2:
     fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
     fig_monthly.update_yaxes(tickformat=',')
-    fig_monthly.update_layout(
-        legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="black"),
-        xaxis=dict(tickfont=dict(color="black")),
-        yaxis=dict(tickfont=dict(color="black"))
-    )
+    fig_monthly.update_layout(legend=dict(font=dict(size=14)))
     st.plotly_chart(fig_monthly, use_container_width=True)
 
 # --- CUMULATIVE TCO SECTION ---
@@ -345,14 +329,7 @@ with col3:
         color_discrete_map=color_map
     )
     fig_cumulative.update_yaxes(tickformat=',')
-    fig_cumulative.update_layout(
-        legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="black"),
-        xaxis=dict(tickfont=dict(color="black")),
-        yaxis=dict(tickfont=dict(color="black"))
-    )
+    fig_cumulative.update_layout(legend=dict(font=dict(size=14)))
     st.plotly_chart(fig_cumulative, use_container_width=True)
 
 with col4:
@@ -373,14 +350,7 @@ with col4:
     fig_tco_bar.update_traces(textfont_size=16)
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
-    fig_tco_bar.update_layout(
-        legend=dict(font=dict(size=14)),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="black"),
-        xaxis=dict(tickfont=dict(color="black")),
-        yaxis=dict(tickfont=dict(color="black"))
-    )
+    fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
 
     # Add Savings Annotations for Total TCO
     if tco_ppv > 0 and tco_scheduled < tco_ppv:
