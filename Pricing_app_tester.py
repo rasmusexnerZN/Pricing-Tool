@@ -10,6 +10,19 @@ st.set_page_config(
     layout="wide",
 )
 
+# --- CUSTOM CSS FOR BACKGROUND COLOR ---
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #deefe8;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 # --- INITIALIZE SESSION STATE ---
 # Default to 3 periods for the Scheduled Fee model
 if 'num_scheduled_periods' not in st.session_state:
