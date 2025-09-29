@@ -27,7 +27,6 @@ def get_fee_for_month(month, tiers_dict):
             break
     return fee
 
-# --- MODIFICATION: Added 'enable_scheduled_fee' parameter ---
 def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
                               pay_per_vessel_price, single_flat_monthly_fee,
                               scheduled_fee_tiers, enable_scheduled_fee):
@@ -53,7 +52,6 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
     costs_ppv = [pay_per_vessel_price * v for v in monthly_vessels]
     costs_single_flat = [single_flat_monthly_fee] * contract_months
     
-    # --- MODIFICATION: Calculate scheduled costs only if enabled ---
     if enable_scheduled_fee:
         costs_scheduled_flat = [get_fee_for_month(m, scheduled_fee_tiers) for m in range(1, contract_months + 1)]
     else:
@@ -114,10 +112,8 @@ with st.sidebar:
         st.markdown("---")
         
         with st.expander("**Model 2: Scheduled Flat Fee**", expanded=True):
-            # --- MODIFICATION: Added toggle switch ---
             enable_scheduled_fee = st.toggle("Enable this model", value=True)
             
-            # --- MODIFICATION: All inputs are now conditional on the toggle ---
             if enable_scheduled_fee:
                 st.write("Define multiple periods with custom start months and fees.")
 
@@ -159,7 +155,6 @@ with st.sidebar:
                     scheduled_fee_tiers[start_month] = fee
                     last_month = start_month
             else:
-                # If disabled, ensure an empty dictionary is passed
                 scheduled_fee_tiers = {}
 
         st.markdown("---")
@@ -177,7 +172,7 @@ with st.sidebar:
 cost_df, onboarding_duration = calculate_costs_over_time(
     total_vessels, contract_months, vessels_per_month,
     pay_per_vessel_price, single_flat_monthly_fee,
-    scheduled_fee_tiers, enable_scheduled_fee # --- MODIFICATION: Pass toggle state
+    scheduled_fee_tiers, enable_scheduled_fee
 )
 
 # --- Update Sidebar with Calculated Value ---
@@ -204,6 +199,16 @@ tco_list = {
 models_to_plot = ['Pay-Per-Vessel', 'Single Flat Fee']
 if enable_scheduled_fee:
     models_to_plot.append('Scheduled Flat Fee')
+
+# --- MODIFICATION: Create a dynamic list for category_orders ---
+# This list ensures only active models are included and maintains a consistent order
+category_order_for_plots = []
+if 'Pay-Per-Vessel' in models_to_plot:
+    category_order_for_plots.append('Pay-Per-Vessel')
+if 'Scheduled Flat Fee' in models_to_plot:
+    category_order_for_plots.append('Scheduled Flat Fee')
+if 'Single Flat Fee' in models_to_plot:
+    category_order_for_plots.append('Single Flat Fee')
 
 
 # --- DETAILED VISUALIZATIONS (SIDE-BY-SIDE) ---
@@ -238,25 +243,23 @@ with col1:
     }
     bar_df = pd.DataFrame(bar_data)
     
-    # --- MODIFICATION: Filter DataFrame before plotting ---
     bar_df_filtered = bar_df[bar_df['Pricing Model'].isin(models_to_plot)]
 
     fig_bar = px.bar(
-        bar_df_filtered, # Use filtered data
+        bar_df_filtered,
         x='Pricing Model',
         y='Average Price Per Vessel',
         color='Pricing Model',
         labels={'Average Price Per Vessel': f'Avg. Price/Vessel ({currency})'},
         text_auto=True,
         color_discrete_map=color_map,
-        category_orders={"Pricing Model": ["Pay-Per-Vessel", "Scheduled Flat Fee", "Single Flat Fee"]} # Keep consistent order
+        category_orders={"Pricing Model": category_order_for_plots} # --- MODIFICATION: Use dynamic category_order
     )
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- MODIFICATION: Make annotations conditional ---
     if enable_scheduled_fee and avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
         saving_scheduled_vs_ppv = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
         fig_bar.add_annotation(
@@ -283,7 +286,7 @@ with col2:
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
-        value_vars=models_to_plot, # --- MODIFICATION: Use dynamic list
+        value_vars=models_to_plot,
         var_name='Pricing Model', 
         value_name='Monthly Cost'
     )
@@ -296,7 +299,6 @@ with col2:
         labels={'Monthly Cost': f'Monthly Cost ({currency})'},
         color_discrete_map=color_map
     )
-    # Only apply hv shape if the model is active
     if 'Scheduled Flat Fee' in models_to_plot:
         fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
@@ -311,7 +313,6 @@ col3, col4 = st.columns(2)
 
 with col3:
     st.subheader("Cumulative Cost of Ownership")
-    # --- MODIFICATION: Dynamically select cumulative columns ---
     cumulative_cols_to_plot = [f'Cumulative {model}' for model in models_to_plot]
 
     plot_df_cumulative = cost_df.melt(
@@ -340,25 +341,23 @@ with col4:
     tco_df = pd.DataFrame(list(tco_list.items()), columns=['Pricing Model', 'Total Cost'])
     tco_df['Pricing Model'] = tco_df['Pricing Model'].str.replace(' TCO', '')
     
-    # --- MODIFICATION: Filter DataFrame before plotting ---
     tco_df_filtered = tco_df[tco_df['Pricing Model'].isin(models_to_plot)]
 
     fig_tco_bar = px.bar(
-        tco_df_filtered, # Use filtered data
+        tco_df_filtered,
         x='Pricing Model',
         y='Total Cost',
         color='Pricing Model',
         labels={'Total Cost': f'Final TCO ({currency})'},
         text_auto='.2s',
         color_discrete_map=color_map,
-        category_orders={"Pricing Model": ["Pay-Per-Vessel", "Scheduled Flat Fee", "Single Flat Fee"]} # Keep consistent order
+        category_orders={"Pricing Model": category_order_for_plots} # --- MODIFICATION: Use dynamic category_order
     )
     fig_tco_bar.update_traces(textfont_size=16)
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- MODIFICATION: Make annotations conditional ---
     if enable_scheduled_fee and tco_ppv > 0 and tco_scheduled < tco_ppv:
         saving_scheduled_vs_ppv_tco = ((tco_ppv - tco_scheduled) / tco_ppv) * 100
         fig_tco_bar.add_annotation(
@@ -386,7 +385,6 @@ st.header("🔢 Detailed Data Breakdown")
 with st.expander("Click to view the month-by-month data"):
     display_df = cost_df.copy()
     
-    # --- MODIFICATION: Conditionally drop columns if model is disabled ---
     if not enable_scheduled_fee:
         display_df = display_df.drop(columns=['Scheduled Flat Fee', 'Cumulative Scheduled Flat Fee'])
 
