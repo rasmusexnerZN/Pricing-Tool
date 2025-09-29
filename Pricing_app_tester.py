@@ -27,9 +27,10 @@ def get_fee_for_month(month, tiers_dict):
             break
     return fee
 
+# --- MODIFICATION: Added 'enable_scheduled_fee' parameter ---
 def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
                               pay_per_vessel_price, single_flat_monthly_fee,
-                              scheduled_fee_tiers):
+                              scheduled_fee_tiers, enable_scheduled_fee):
     """Calculates monthly and cumulative costs over time for all three models."""
     
     # 1. Calculate the Onboarding Duration 
@@ -50,9 +51,14 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
 
     # 3. Calculate monthly costs for each model
     costs_ppv = [pay_per_vessel_price * v for v in monthly_vessels]
-    # The monthly cost is simply the user's input
     costs_single_flat = [single_flat_monthly_fee] * contract_months
-    costs_scheduled_flat = [get_fee_for_month(m, scheduled_fee_tiers) for m in range(1, contract_months + 1)]
+    
+    # --- MODIFICATION: Calculate scheduled costs only if enabled ---
+    if enable_scheduled_fee:
+        costs_scheduled_flat = [get_fee_for_month(m, scheduled_fee_tiers) for m in range(1, contract_months + 1)]
+    else:
+        costs_scheduled_flat = [0] * contract_months
+
 
     # 4. Create DataFrame
     df = pd.DataFrame({
@@ -108,45 +114,54 @@ with st.sidebar:
         st.markdown("---")
         
         with st.expander("**Model 2: Scheduled Flat Fee**", expanded=True):
-            st.write("Define multiple periods with custom start months and fees.")
-
-            def add_scheduled_period():
-                if st.session_state.num_scheduled_periods < 5:
-                    st.session_state.num_scheduled_periods += 1
-            def remove_scheduled_period():
-                if st.session_state.num_scheduled_periods > 1:
-                    st.session_state.num_scheduled_periods -= 1
-
-            b_col1, b_col2 = st.columns(2)
-            b_col1.button("Add Period", on_click=add_scheduled_period, use_container_width=True, key="add_ramp")
-            b_col2.button("Remove Last Period", on_click=remove_scheduled_period, use_container_width=True, key="remove_ramp")
-
-            scheduled_fee_tiers = {}
-            last_month = 1
+            # --- MODIFICATION: Added toggle switch ---
+            enable_scheduled_fee = st.toggle("Enable this model", value=True)
             
-            default_scheduled_values = [
-                {'month': 1, 'fee': 15000},
-                {'month': 6, 'fee': 35000},
-                {'month': 12, 'fee': 45000}
-            ]
+            # --- MODIFICATION: All inputs are now conditional on the toggle ---
+            if enable_scheduled_fee:
+                st.write("Define multiple periods with custom start months and fees.")
 
-            for i in range(st.session_state.num_scheduled_periods):
-                st.markdown(f"**Period {i + 1}**")
-                cols = st.columns(2)
-                
-                default_month = default_scheduled_values[i]['month'] if i < len(default_scheduled_values) else last_month + 6
-                default_fee = default_scheduled_values[i]['fee'] if i < len(default_scheduled_values) else 50000
+                def add_scheduled_period():
+                    if st.session_state.num_scheduled_periods < 5:
+                        st.session_state.num_scheduled_periods += 1
+                def remove_scheduled_period():
+                    if st.session_state.num_scheduled_periods > 1:
+                        st.session_state.num_scheduled_periods -= 1
 
-                if i == 0:
-                    start_month = 1
-                    cols[0].metric("Start Month", "1")
-                    fee = cols[1].number_input("Monthly Fee", value=default_fee, step=500, key=f'ramp_fee_{i}')
-                else:
-                    start_month = cols[0].number_input("Start Month", min_value=last_month + 1, max_value=contract_months, value=default_month, key=f'ramp_month_{i}')
-                    fee = cols[1].number_input("Monthly Fee", value=default_fee, step=500, key=f'ramp_fee_{i}')
+                b_col1, b_col2 = st.columns(2)
+                b_col1.button("Add Period", on_click=add_scheduled_period, use_container_width=True, key="add_ramp")
+                b_col2.button("Remove Last Period", on_click=remove_scheduled_period, use_container_width=True, key="remove_ramp")
+
+                scheduled_fee_tiers = {}
+                last_month = 1
                 
-                scheduled_fee_tiers[start_month] = fee
-                last_month = start_month
+                default_scheduled_values = [
+                    {'month': 1, 'fee': 15000},
+                    {'month': 6, 'fee': 35000},
+                    {'month': 12, 'fee': 45000}
+                ]
+
+                for i in range(st.session_state.num_scheduled_periods):
+                    st.markdown(f"**Period {i + 1}**")
+                    cols = st.columns(2)
+                    
+                    default_month = default_scheduled_values[i]['month'] if i < len(default_scheduled_values) else last_month + 6
+                    default_fee = default_scheduled_values[i]['fee'] if i < len(default_scheduled_values) else 50000
+
+                    if i == 0:
+                        start_month = 1
+                        cols[0].metric("Start Month", "1")
+                        fee = cols[1].number_input("Monthly Fee", value=default_fee, step=500, key=f'ramp_fee_{i}')
+                    else:
+                        start_month = cols[0].number_input("Start Month", min_value=last_month + 1, max_value=contract_months, value=default_month, key=f'ramp_month_{i}')
+                        fee = cols[1].number_input("Monthly Fee", value=default_fee, step=500, key=f'ramp_fee_{i}')
+                    
+                    scheduled_fee_tiers[start_month] = fee
+                    last_month = start_month
+            else:
+                # If disabled, ensure an empty dictionary is passed
+                scheduled_fee_tiers = {}
+
         st.markdown("---")
         
         st.markdown("**Model 3: Single Flat Fee**")
@@ -162,7 +177,7 @@ with st.sidebar:
 cost_df, onboarding_duration = calculate_costs_over_time(
     total_vessels, contract_months, vessels_per_month,
     pay_per_vessel_price, single_flat_monthly_fee,
-    scheduled_fee_tiers
+    scheduled_fee_tiers, enable_scheduled_fee # --- MODIFICATION: Pass toggle state
 )
 
 # --- Update Sidebar with Calculated Value ---
@@ -176,7 +191,6 @@ color_map = {
 }
 
 # --- CALCULATIONS FOR CHARTS ---
-# (These calculations were previously under the summary section but are needed for the charts below)
 tco_ppv = cost_df['Pay-Per-Vessel'].sum()
 tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
 single_flat_fee_tco = single_flat_monthly_fee * contract_months
@@ -185,6 +199,11 @@ tco_list = {
     "Scheduled Flat Fee TCO": tco_scheduled,
     "Single Flat Fee TCO": single_flat_fee_tco
 }
+
+# --- MODIFICATION: Create a dynamic list of models to plot ---
+models_to_plot = ['Pay-Per-Vessel', 'Single Flat Fee']
+if enable_scheduled_fee:
+    models_to_plot.append('Scheduled Flat Fee')
 
 
 # --- DETAILED VISUALIZATIONS (SIDE-BY-SIDE) ---
@@ -198,7 +217,7 @@ with col1:
 
     if total_vessel_months > 0:
         avg_price_ppv = pay_per_vessel_price
-        avg_price_scheduled = tco_scheduled / total_vessel_months
+        avg_price_scheduled = tco_scheduled / total_vessel_months if enable_scheduled_fee else 0
         avg_price_single_flat = single_flat_fee_tco / total_vessel_months
     else:
         avg_price_ppv = pay_per_vessel_price
@@ -219,24 +238,26 @@ with col1:
     }
     bar_df = pd.DataFrame(bar_data)
     
-    bar_df['Pricing Model'] = pd.Categorical(bar_df['Pricing Model'], ["Pay-Per-Vessel", "Scheduled Flat Fee", "Single Flat Fee"])
+    # --- MODIFICATION: Filter DataFrame before plotting ---
+    bar_df_filtered = bar_df[bar_df['Pricing Model'].isin(models_to_plot)]
 
     fig_bar = px.bar(
-        bar_df,
+        bar_df_filtered, # Use filtered data
         x='Pricing Model',
         y='Average Price Per Vessel',
         color='Pricing Model',
         labels={'Average Price Per Vessel': f'Avg. Price/Vessel ({currency})'},
         text_auto=True,
-        color_discrete_map=color_map
+        color_discrete_map=color_map,
+        category_orders={"Pricing Model": ["Pay-Per-Vessel", "Scheduled Flat Fee", "Single Flat Fee"]} # Keep consistent order
     )
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # Add Savings Annotations for Average Price
-    if avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
+    # --- MODIFICATION: Make annotations conditional ---
+    if enable_scheduled_fee and avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
         saving_scheduled_vs_ppv = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
         fig_bar.add_annotation(
             x='Scheduled Flat Fee', y=avg_price_scheduled,
@@ -245,7 +266,7 @@ with col1:
             font=dict(color="#186e80", size=14)
         )
 
-    if avg_price_scheduled > 0 and avg_price_single_flat < avg_price_scheduled:
+    if enable_scheduled_fee and avg_price_scheduled > 0 and avg_price_single_flat < avg_price_scheduled:
         saving_single_vs_scheduled = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
         fig_bar.add_annotation(
             x='Single Flat Fee', y=avg_price_single_flat,
@@ -262,7 +283,7 @@ with col2:
     
     plot_df_monthly = cost_df.melt(
         id_vars='Month', 
-        value_vars=['Pay-Per-Vessel', 'Scheduled Flat Fee', 'Single Flat Fee'], 
+        value_vars=models_to_plot, # --- MODIFICATION: Use dynamic list
         var_name='Pricing Model', 
         value_name='Monthly Cost'
     )
@@ -275,7 +296,9 @@ with col2:
         labels={'Monthly Cost': f'Monthly Cost ({currency})'},
         color_discrete_map=color_map
     )
-    fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
+    # Only apply hv shape if the model is active
+    if 'Scheduled Flat Fee' in models_to_plot:
+        fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
     fig_monthly.update_yaxes(tickformat=',')
     fig_monthly.update_layout(legend=dict(font=dict(size=14)))
@@ -288,10 +311,12 @@ col3, col4 = st.columns(2)
 
 with col3:
     st.subheader("Cumulative Cost of Ownership")
-    cumulative_cols = ['Cumulative Pay-Per-Vessel', 'Cumulative Scheduled Flat Fee', 'Cumulative Single Flat Fee']
+    # --- MODIFICATION: Dynamically select cumulative columns ---
+    cumulative_cols_to_plot = [f'Cumulative {model}' for model in models_to_plot]
+
     plot_df_cumulative = cost_df.melt(
         id_vars='Month',
-        value_vars=cumulative_cols,
+        value_vars=cumulative_cols_to_plot,
         var_name='Pricing Model',
         value_name='Cumulative TCO'
     )
@@ -315,22 +340,26 @@ with col4:
     tco_df = pd.DataFrame(list(tco_list.items()), columns=['Pricing Model', 'Total Cost'])
     tco_df['Pricing Model'] = tco_df['Pricing Model'].str.replace(' TCO', '')
     
+    # --- MODIFICATION: Filter DataFrame before plotting ---
+    tco_df_filtered = tco_df[tco_df['Pricing Model'].isin(models_to_plot)]
+
     fig_tco_bar = px.bar(
-        tco_df,
+        tco_df_filtered, # Use filtered data
         x='Pricing Model',
         y='Total Cost',
         color='Pricing Model',
         labels={'Total Cost': f'Final TCO ({currency})'},
         text_auto='.2s',
-        color_discrete_map=color_map
+        color_discrete_map=color_map,
+        category_orders={"Pricing Model": ["Pay-Per-Vessel", "Scheduled Flat Fee", "Single Flat Fee"]} # Keep consistent order
     )
     fig_tco_bar.update_traces(textfont_size=16)
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # Add Savings Annotations for Total TCO
-    if tco_ppv > 0 and tco_scheduled < tco_ppv:
+    # --- MODIFICATION: Make annotations conditional ---
+    if enable_scheduled_fee and tco_ppv > 0 and tco_scheduled < tco_ppv:
         saving_scheduled_vs_ppv_tco = ((tco_ppv - tco_scheduled) / tco_ppv) * 100
         fig_tco_bar.add_annotation(
             x='Scheduled Flat Fee', y=tco_scheduled,
@@ -339,7 +368,7 @@ with col4:
             font=dict(color="#186e80", size=14)
         )
     
-    if tco_scheduled > 0 and single_flat_fee_tco < tco_scheduled:
+    if enable_scheduled_fee and tco_scheduled > 0 and single_flat_fee_tco < tco_scheduled:
         saving_single_vs_scheduled_tco = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
         fig_tco_bar.add_annotation(
             x='Single Flat Fee', y=single_flat_fee_tco,
@@ -356,7 +385,12 @@ st.markdown("---")
 st.header("🔢 Detailed Data Breakdown")
 with st.expander("Click to view the month-by-month data"):
     display_df = cost_df.copy()
+    
+    # --- MODIFICATION: Conditionally drop columns if model is disabled ---
+    if not enable_scheduled_fee:
+        display_df = display_df.drop(columns=['Scheduled Flat Fee', 'Cumulative Scheduled Flat Fee'])
+
     for col in display_df.columns:
         if col not in ['Month', 'Onboarded Vessels']:
             display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}")
-    st.dataframe(display_df)
+    st.dataframe(display_df, use_container_width=True)
