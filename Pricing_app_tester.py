@@ -139,8 +139,6 @@ tco_pp_unit = cost_df[pp_unit_label].sum()
 tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
 single_flat_fee_tco = single_flat_monthly_fee * contract_months
 
-st.markdown(f"A tool to compare **{pp_unit_label}**, **Scheduled Flat Fee**, and **Single Flat Fee** models.")
-
 # --- MODIFICATION: New 2x2 Chart Layout ---
 row1_col1, row1_col2 = st.columns(2)
 row2_col1, row2_col2 = st.columns(2)
