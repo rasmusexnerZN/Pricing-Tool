@@ -25,25 +25,26 @@ def get_fee_for_month(month, tiers_dict):
             break
     return fee
 
-def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
-                              pay_per_vessel_price, single_flat_monthly_fee,
+def calculate_costs_over_time(total_units, contract_months, units_per_month,
+                              price_per_unit, single_flat_monthly_fee,
                               scheduled_fee_tiers, enable_scheduled_fee):
     """Calculates monthly and cumulative costs over time for all models."""
-    if vessels_per_month > 0:
-        onboarding_duration = math.ceil(total_vessels / vessels_per_month)
+    if units_per_month > 0:
+        onboarding_duration = math.ceil(total_units / units_per_month)
     else:
         onboarding_duration = 0
 
-    monthly_vessels = []
-    current_vessels = 0
+    monthly_units = []
+    current_units = 0
     for month in range(1, contract_months + 1):
-        if current_vessels < total_vessels:
-            remaining_to_onboard = total_vessels - current_vessels
-            vessels_to_add = min(vessels_per_month, remaining_to_onboard)
-            current_vessels += vessels_to_add
-        monthly_vessels.append(current_vessels)
+        if current_units < total_units:
+            remaining_to_onboard = total_units - current_units
+            units_to_add = min(units_per_month, remaining_to_onboard)
+            current_units += units_to_add
+        monthly_units.append(current_units)
 
-    costs_ppv = [pay_per_vessel_price * v for v in monthly_vessels]
+    # Note: Column names are generic here; they will be renamed dynamically later.
+    costs_pp_unit = [price_per_unit * u for u in monthly_units]
     costs_single_flat = [single_flat_monthly_fee] * contract_months
     
     if enable_scheduled_fee:
@@ -53,13 +54,13 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
 
     df = pd.DataFrame({
         'Month': range(1, contract_months + 1),
-        'Onboarded Vessels': monthly_vessels,
-        'Pay-Per-Vessel': costs_ppv,
+        'Onboarded Units': monthly_units,
+        'Pay-Per-Unit': costs_pp_unit,
         'Scheduled Flat Fee': costs_scheduled_flat,
         'Single Flat Fee': costs_single_flat,
     })
     
-    df['Cumulative Pay-Per-Vessel'] = df['Pay-Per-Vessel'].cumsum()
+    df['Cumulative Pay-Per-Unit'] = df['Pay-Per-Unit'].cumsum()
     df['Cumulative Scheduled Flat Fee'] = df['Scheduled Flat Fee'].cumsum()
     df['Cumulative Single Flat Fee'] = df['Single Flat Fee'].cumsum()
     
@@ -68,27 +69,38 @@ def calculate_costs_over_time(total_vessels, contract_months, vessels_per_month,
 # --- UI & APP LOGIC ---
 
 st.title("🚢 Pricing Model Simulator")
-st.markdown(
-    "A tool to compare **Pay-Per-Vessel**, **Scheduled Flat Fee**, and **Single Flat Fee** models."
-)
 
+# --- SIDEBAR FOR INPUTS ---
 with st.sidebar:
     st.header("⚙️ Configuration")
     tab1, tab2 = st.tabs(["📄 Contract Setup", "💰 Pricing Inputs"])
     with tab1:
         st.subheader("Client & Contract")
         currency = st.selectbox("Currency", ["USD", "EUR", "DKK"])
-        total_vessels = st.number_input("Total Number of Vessels", min_value=1, value=50, step=1)
+        
+        # --- MODIFICATION: Added Unit of Measure selector ---
+        unit_of_measure = st.selectbox("Select Unit of Measure", ["Vessel", "Voyage", "MT Bunker"])
+        
+        # --- MODIFICATION: Make labels dynamic based on the selected unit ---
+        unit_plural = f"{unit_of_measure}s" if unit_of_measure != "MT Bunker" else "MT Bunker"
+
+        total_units = st.number_input(f"Total Number of {unit_plural}", min_value=1, value=50, step=1)
         contract_months = st.number_input("Contract Period (Months)", min_value=1, value=48, step=1)
         st.markdown("---")
         st.subheader("Onboarding Plan")
-        vessels_per_month = st.number_input("Vessels Onboarded Per Month", min_value=1, value=5, step=1, help="The number of vessels to add each month until the total is reached.")
+        units_per_month = st.number_input(f"{unit_plural} Added Per Month", min_value=1, value=5, step=1, help=f"The number of {unit_plural.lower()} to add each month until the total is reached.")
         onboarding_duration_placeholder = st.empty()
+
     with tab2:
         st.subheader("Model Configuration")
-        st.markdown("**Model 1: Pay-Per-Vessel**")
-        pay_per_vessel_price = st.number_input(f"Price Per Vessel Per Month ({currency})", min_value=0, value=1000, step=50)
+        
+        # --- MODIFICATION: Dynamic label for the Pay-Per-Unit model ---
+        pp_unit_label = f"Pay-Per-{unit_of_measure}"
+
+        st.markdown(f"**Model 1: {pp_unit_label}**")
+        price_per_unit = st.number_input(f"Price Per {unit_of_measure} Per Month ({currency})", min_value=0, value=1000, step=50)
         st.markdown("---")
+        
         with st.expander("**Model 2: Scheduled Flat Fee**", expanded=True):
             enable_scheduled_fee = st.toggle("Enable this model", value=True)
             if enable_scheduled_fee:
@@ -123,55 +135,62 @@ with st.sidebar:
         st.markdown("**Model 3: Single Flat Fee**")
         single_flat_monthly_fee = st.number_input(f"Flat Monthly Fee ({currency})", min_value=0, value=35000, step=500, help="A single, fixed fee charged every month for the entire contract period.")
 
-cost_df, onboarding_duration = calculate_costs_over_time(total_vessels, contract_months, vessels_per_month, pay_per_vessel_price, single_flat_monthly_fee, scheduled_fee_tiers, enable_scheduled_fee)
+# --- DATA CALCULATION AND PROCESSING ---
+cost_df, onboarding_duration = calculate_costs_over_time(total_units, contract_months, units_per_month, price_per_unit, single_flat_monthly_fee, scheduled_fee_tiers, enable_scheduled_fee)
 onboarding_duration_placeholder.metric(label="Calculated Onboarding Duration", value=f"{onboarding_duration} Months")
 
-color_map = {'Pay-Per-Vessel': '#003143', 'Scheduled Flat Fee': '#186e80', 'Single Flat Fee': '#4fb18c'}
+# --- MODIFICATION: Rename columns and define dynamic plot variables ---
+pp_unit_label = f"Pay-Per-{unit_of_measure}"
+cost_df.rename(columns={
+    'Pay-Per-Unit': pp_unit_label,
+    'Cumulative Pay-Per-Unit': f'Cumulative {pp_unit_label}',
+    'Onboarded Units': f'Onboarded {unit_plural}'
+}, inplace=True)
 
-tco_ppv = cost_df['Pay-Per-Vessel'].sum()
-tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
-single_flat_fee_tco = single_flat_monthly_fee * contract_months
-tco_list = {"Pay-Per-Vessel TCO": tco_ppv, "Scheduled Flat Fee TCO": tco_scheduled, "Single Flat Fee TCO": single_flat_fee_tco}
-
-models_to_plot = ['Pay-Per-Vessel', 'Single Flat Fee']
+color_map = {pp_unit_label: '#003143', 'Scheduled Flat Fee': '#186e80', 'Single Flat Fee': '#4fb18c'}
+models_to_plot = [pp_unit_label, 'Single Flat Fee']
 if enable_scheduled_fee:
     models_to_plot.append('Scheduled Flat Fee')
+category_order_for_plots = [model for model in [pp_unit_label, 'Scheduled Flat Fee', 'Single Flat Fee'] if model in models_to_plot]
 
-category_order_for_plots = [model for model in ['Pay-Per-Vessel', 'Scheduled Flat Fee', 'Single Flat Fee'] if model in models_to_plot]
-
+# --- MAIN PAGE OUTPUTS ---
+st.markdown(f"A tool to compare **{pp_unit_label}**, **Scheduled Flat Fee**, and **Single Flat Fee** models.")
 st.header("📈 Detailed Cost of Ownership Analysis")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Effective Cost of Ownership per Vessel")
-    total_vessel_months = cost_df['Onboarded Vessels'].sum()
-    if total_vessel_months > 0:
-        avg_price_ppv = pay_per_vessel_price
-        avg_price_scheduled = tco_scheduled / total_vessel_months if enable_scheduled_fee else 0
-        avg_price_single_flat = single_flat_fee_tco / total_vessel_months
-    else:
-        avg_price_ppv, avg_price_scheduled, avg_price_single_flat = pay_per_vessel_price, 0, 0
+    # --- MODIFICATION: Dynamic subheader ---
+    st.subheader(f"Effective Cost of Ownership per {unit_of_measure}")
     
-    bar_data = {'Pricing Model': ['Pay-Per-Vessel', 'Scheduled Flat Fee', 'Single Flat Fee'], 'Average Price Per Vessel': [avg_price_ppv, avg_price_scheduled, avg_price_single_flat]}
+    tco_pp_unit = cost_df[pp_unit_label].sum()
+    tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
+    single_flat_fee_tco = single_flat_monthly_fee * contract_months
+    
+    total_unit_months = cost_df[f'Onboarded {unit_plural}'].sum()
+    
+    if total_unit_months > 0:
+        avg_price_pp_unit = price_per_unit
+        avg_price_scheduled = tco_scheduled / total_unit_months if enable_scheduled_fee else 0
+        avg_price_single_flat = single_flat_fee_tco / total_unit_months
+    else:
+        avg_price_pp_unit, avg_price_scheduled, avg_price_single_flat = price_per_unit, 0, 0
+    
+    bar_data = {'Pricing Model': [pp_unit_label, 'Scheduled Flat Fee', 'Single Flat Fee'], f'Average Price Per {unit_of_measure}': [avg_price_pp_unit, avg_price_scheduled, avg_price_single_flat]}
     bar_df = pd.DataFrame(bar_data)
     bar_df_filtered = bar_df[bar_df['Pricing Model'].isin(models_to_plot)]
     
-    fig_bar = px.bar(bar_df_filtered, x='Pricing Model', y='Average Price Per Vessel', color='Pricing Model', labels={'Average Price Per Vessel': f'Avg. Price/Vessel ({currency})'}, text_auto=True, color_discrete_map=color_map, category_orders={"Pricing Model": category_order_for_plots})
+    fig_bar = px.bar(bar_df_filtered, x='Pricing Model', y=f'Average Price Per {unit_of_measure}', color='Pricing Model', labels={f'Average Price Per {unit_of_measure}': f'Avg. Price/{unit_of_measure} ({currency})'}, text_auto=True, color_discrete_map=color_map, category_orders={"Pricing Model": category_order_for_plots})
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- MODIFICATION: New baseline annotation logic ---
-    # Compare Scheduled Fee vs. baseline (PPV)
-    if enable_scheduled_fee and avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
-        saving = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
-        fig_bar.add_annotation(x='Scheduled Flat Fee', y=avg_price_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
-        
-    # Compare Single Flat Fee vs. baseline (PPV)
-    if avg_price_ppv > 0 and avg_price_single_flat < avg_price_ppv:
-        saving = ((avg_price_ppv - avg_price_single_flat) / avg_price_ppv) * 100
-        fig_bar.add_annotation(x='Single Flat Fee', y=avg_price_single_flat, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
+    if enable_scheduled_fee and avg_price_pp_unit > 0 and avg_price_scheduled < avg_price_pp_unit:
+        saving = ((avg_price_pp_unit - avg_price_scheduled) / avg_price_pp_unit) * 100
+        fig_bar.add_annotation(x='Scheduled Flat Fee', y=avg_price_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
+    if avg_price_pp_unit > 0 and avg_price_single_flat < avg_price_pp_unit:
+        saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
+        fig_bar.add_annotation(x='Single Flat Fee', y=avg_price_single_flat, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -181,7 +200,7 @@ with col2:
     fig_monthly = px.line(plot_df_monthly, x='Month', y='Monthly Cost', color='Pricing Model', labels={'Monthly Cost': f'Monthly Cost ({currency})'}, color_discrete_map=color_map)
     if 'Scheduled Flat Fee' in models_to_plot:
         fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
-    fig_monthly.update_traces(selector={"name": "Pay-Per-Vessel"}, line_shape='hv')
+    fig_monthly.update_traces(selector={"name": pp_unit_label}, line_shape='hv')
     fig_monthly.update_yaxes(tickformat=',')
     fig_monthly.update_layout(legend=dict(font=dict(size=14)))
     st.plotly_chart(fig_monthly, use_container_width=True)
@@ -202,6 +221,7 @@ with col3:
 
 with col4:
     st.subheader("Total Cost of Ownership")
+    tco_list = {f"{pp_unit_label} TCO": tco_pp_unit, "Scheduled Flat Fee TCO": tco_scheduled, "Single Flat Fee TCO": single_flat_fee_tco}
     tco_df = pd.DataFrame(list(tco_list.items()), columns=['Pricing Model', 'Total Cost'])
     tco_df['Pricing Model'] = tco_df['Pricing Model'].str.replace(' TCO', '')
     tco_df_filtered = tco_df[tco_df['Pricing Model'].isin(models_to_plot)]
@@ -212,16 +232,12 @@ with col4:
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- MODIFICATION: New baseline annotation logic ---
-    # Compare Scheduled Fee vs. baseline (PPV)
-    if enable_scheduled_fee and tco_ppv > 0 and tco_scheduled < tco_ppv:
-        saving = ((tco_ppv - tco_scheduled) / tco_ppv) * 100
-        fig_tco_bar.add_annotation(x='Scheduled Flat Fee', y=tco_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
-
-    # Compare Single Flat Fee vs. baseline (PPV)
-    if tco_ppv > 0 and single_flat_fee_tco < tco_ppv:
-        saving = ((tco_ppv - single_flat_fee_tco) / tco_ppv) * 100
-        fig_tco_bar.add_annotation(x='Single Flat Fee', y=single_flat_fee_tco, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
+    if enable_scheduled_fee and tco_pp_unit > 0 and tco_scheduled < tco_pp_unit:
+        saving = ((tco_pp_unit - tco_scheduled) / tco_pp_unit) * 100
+        fig_tco_bar.add_annotation(x='Scheduled Flat Fee', y=tco_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
+    if tco_pp_unit > 0 and single_flat_fee_tco < tco_pp_unit:
+        saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
+        fig_tco_bar.add_annotation(x='Single Flat Fee', y=single_flat_fee_tco, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
 
@@ -232,6 +248,6 @@ with st.expander("Click to view the month-by-month data"):
     if not enable_scheduled_fee:
         display_df = display_df.drop(columns=['Scheduled Flat Fee', 'Cumulative Scheduled Flat Fee'])
     for col in display_df.columns:
-        if col not in ['Month', 'Onboarded Vessels']:
+        if col not in ['Month', f'Onboarded {unit_plural}']:
             display_df[col] = display_df[col].apply(lambda x: f"{x:,.0f}")
     st.dataframe(display_df, use_container_width=True)
