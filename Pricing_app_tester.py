@@ -162,20 +162,16 @@ with col1:
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- MODIFICATION: New dynamic annotation logic ---
-    if enable_scheduled_fee:
-        # Original logic when all models are active
-        if avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
-            saving = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
-            fig_bar.add_annotation(x='Scheduled Flat Fee', y=avg_price_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
-        if avg_price_scheduled > 0 and avg_price_single_flat < avg_price_scheduled:
-            saving = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
-            fig_bar.add_annotation(x='Single Flat Fee', y=avg_price_single_flat, text=f"<b>{saving:.1f}% saving</b><br>vs. Scheduled", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
-    else:
-        # New logic: Compare Single Flat directly to Pay-Per-Vessel
-        if avg_price_ppv > 0 and avg_price_single_flat < avg_price_ppv:
-            saving = ((avg_price_ppv - avg_price_single_flat) / avg_price_ppv) * 100
-            fig_bar.add_annotation(x='Single Flat Fee', y=avg_price_single_flat, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
+    # --- MODIFICATION: New baseline annotation logic ---
+    # Compare Scheduled Fee vs. baseline (PPV)
+    if enable_scheduled_fee and avg_price_ppv > 0 and avg_price_scheduled < avg_price_ppv:
+        saving = ((avg_price_ppv - avg_price_scheduled) / avg_price_ppv) * 100
+        fig_bar.add_annotation(x='Scheduled Flat Fee', y=avg_price_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
+        
+    # Compare Single Flat Fee vs. baseline (PPV)
+    if avg_price_ppv > 0 and avg_price_single_flat < avg_price_ppv:
+        saving = ((avg_price_ppv - avg_price_single_flat) / avg_price_ppv) * 100
+        fig_bar.add_annotation(x='Single Flat Fee', y=avg_price_single_flat, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -216,20 +212,16 @@ with col4:
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
 
-    # --- MODIFICATION: New dynamic annotation logic ---
-    if enable_scheduled_fee:
-        # Original logic when all models are active
-        if tco_ppv > 0 and tco_scheduled < tco_ppv:
-            saving = ((tco_ppv - tco_scheduled) / tco_ppv) * 100
-            fig_tco_bar.add_annotation(x='Scheduled Flat Fee', y=tco_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
-        if tco_scheduled > 0 and single_flat_fee_tco < tco_scheduled:
-            saving = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
-            fig_tco_bar.add_annotation(x='Single Flat Fee', y=single_flat_fee_tco, text=f"<b>{saving:.1f}% saving</b><br>vs. Scheduled", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
-    else:
-        # New logic: Compare Single Flat directly to Pay-Per-Vessel
-        if tco_ppv > 0 and single_flat_fee_tco < tco_ppv:
-            saving = ((tco_ppv - single_flat_fee_tco) / tco_ppv) * 100
-            fig_tco_bar.add_annotation(x='Single Flat Fee', y=single_flat_fee_tco, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
+    # --- MODIFICATION: New baseline annotation logic ---
+    # Compare Scheduled Fee vs. baseline (PPV)
+    if enable_scheduled_fee and tco_ppv > 0 and tco_scheduled < tco_ppv:
+        saving = ((tco_ppv - tco_scheduled) / tco_ppv) * 100
+        fig_tco_bar.add_annotation(x='Scheduled Flat Fee', y=tco_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
+
+    # Compare Single Flat Fee vs. baseline (PPV)
+    if tco_ppv > 0 and single_flat_fee_tco < tco_ppv:
+        saving = ((tco_ppv - single_flat_fee_tco) / tco_ppv) * 100
+        fig_tco_bar.add_annotation(x='Single Flat Fee', y=single_flat_fee_tco, text=f"<b>{saving:.1f}% saving</b><br>vs. Pay-Per-Vessel", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
 
