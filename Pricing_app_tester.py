@@ -144,7 +144,8 @@ st.markdown(f"A tool to compare **{pp_unit_label}**, **Scheduled Flat Fee**, and
 row1_col1, row1_col2 = st.columns(2)
 row2_col1, row2_col2 = st.columns(2)
 
-legend_config = dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5, font=dict(size=14))
+# --- MODIFICATION: Reusable legend configuration with no title ---
+legend_config = dict(title_text='', orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5, font=dict(size=14))
 
 # Chart 1 (Top-Left): Total Cost Through Contract
 with row1_col1:
@@ -155,41 +156,36 @@ with row1_col1:
     tco_df_filtered = tco_df[tco_df['Pricing Model'].isin(models_to_plot)]
     
     fig_tco_bar = px.bar(tco_df_filtered, x='Pricing Model', y='Total Cost', color='Pricing Model', labels={'Total Cost': f'Total Cost ({currency})'}, text_auto='.2s', color_discrete_map=color_map, category_orders={"Pricing Model": category_order_for_plots})
-    fig_tco_bar.update_traces(textfont_size=16)
+    fig_tco_bar.update_traces(textfont_size=16, textposition='outside')
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_tco_bar.update_layout(legend=legend_config)
 
-    # --- MODIFICATION: Layered Waterfall visualization ---
-    line_style_step = dict(color="grey", dash="dash", width=1)
-    line_style_total = dict(color="darkorange", dash="solid", width=1.5)
-    
+    # --- MODIFICATION: Angled and Extended Waterfall Lines ---
+    line_style = dict(color="grey", dash="dash", width=1)
+    bar_width = 0.4 # Half of default bar width of 0.8
     if enable_scheduled_fee:
-        # --- Sequential Savings (gray, dashed) ---
+        # Angled line: PP-Unit -> Scheduled
         if tco_pp_unit > tco_scheduled > 0:
             saving = ((tco_pp_unit - tco_scheduled) / tco_pp_unit) * 100
-            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style_step)
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=tco_scheduled, line=line_style_step)
-            fig_tco_bar.add_annotation(x=1, y=(tco_pp_unit + tco_scheduled) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#186e80", size=14))
+            fig_tco_bar.add_shape(type="line", x0=0+bar_width, y0=tco_pp_unit, x1=1-bar_width, y1=tco_scheduled, line=line_style)
+            fig_tco_bar.add_annotation(x=0.5, y=(tco_pp_unit + tco_scheduled) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, font=dict(color="#186e80", size=14))
+        # Angled line: Scheduled -> Single Flat
         if tco_scheduled > single_flat_fee_tco > 0:
             saving = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_scheduled, x1=2, y1=tco_scheduled, line=line_style_step)
-            fig_tco_bar.add_shape(type="line", x0=2, y0=tco_scheduled, x1=2, y1=single_flat_fee_tco, line=line_style_step)
-            fig_tco_bar.add_annotation(x=2, y=(tco_scheduled + single_flat_fee_tco) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
-        # --- Overall Savings (orange, solid) ---
+            fig_tco_bar.add_shape(type="line", x0=1+bar_width, y0=tco_scheduled, x1=2-bar_width, y1=single_flat_fee_tco, line=line_style)
+            fig_tco_bar.add_annotation(x=1.5, y=(tco_scheduled + single_flat_fee_tco) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, font=dict(color="#4fb18c", size=14))
+        # Extended line: PP-Unit -> Single Flat
         if tco_pp_unit > single_flat_fee_tco > 0:
             total_saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
-            y_level = tco_pp_unit * 1.05 # Draw slightly above
-            fig_tco_bar.add_shape(type="line", x0=0, y0=y_level, x1=2, y1=y_level, line=line_style_total)
-            fig_tco_bar.add_shape(type="line", x0=2, y0=y_level, x1=2, y1=single_flat_fee_tco, line=line_style_total)
-            fig_tco_bar.add_annotation(x=2, y=(y_level + single_flat_fee_tco) / 2, text=f"<b>-{total_saving:.1f}% TOTAL</b>", showarrow=False, xshift=45, font=dict(color="darkorange", size=14))
-
-    else: # Only PP-Unit and Single Flat are active
+            fig_tco_bar.add_shape(type="line", x0=0+bar_width, y0=tco_pp_unit, x1=2, y1=tco_pp_unit, line=line_style)
+            fig_tco_bar.add_shape(type="line", x0=2, y0=tco_pp_unit, x1=2, y1=single_flat_fee_tco, line=line_style)
+            fig_tco_bar.add_annotation(x=2, y=(tco_pp_unit + single_flat_fee_tco) / 2, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
+    else: # Only two bars are active
         if tco_pp_unit > single_flat_fee_tco > 0:
             saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
-            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style_step)
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=single_flat_fee_tco, line=line_style_step)
-            fig_tco_bar.add_annotation(x=1, y=(tco_pp_unit + single_flat_fee_tco) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
+            fig_tco_bar.add_shape(type="line", x0=0+bar_width, y0=tco_pp_unit, x1=1-bar_width, y1=single_flat_fee_tco, line=line_style)
+            fig_tco_bar.add_annotation(x=0.5, y=(tco_pp_unit + single_flat_fee_tco) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
 
@@ -221,40 +217,36 @@ with row2_col1:
     bar_df_filtered = bar_df[bar_df['Pricing Model'].isin(models_to_plot)]
     
     fig_bar = px.bar(bar_df_filtered, x='Pricing Model', y=f'Average Price Per {unit_of_measure}', color='Pricing Model', labels={f'Average Price Per {unit_of_measure}': f'Avg. Price/{unit_of_measure} ({currency})'}, text_auto=True, color_discrete_map=color_map, category_orders={"Pricing Model": category_order_for_plots})
-    fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
+    fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16, textposition='outside')
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
     fig_bar.update_layout(legend=legend_config)
 
-    # --- MODIFICATION: Layered Waterfall visualization ---
-    line_style_step = dict(color="grey", dash="dash", width=1)
-    line_style_total = dict(color="darkorange", dash="solid", width=1.5)
+    # --- MODIFICATION: Angled and Extended Waterfall Lines ---
+    line_style = dict(color="grey", dash="dash", width=1)
+    bar_width = 0.4
     if enable_scheduled_fee:
-        # --- Sequential Savings (gray, dashed) ---
+        # Angled line: PP-Unit -> Scheduled
         if avg_price_pp_unit > avg_price_scheduled > 0:
             saving = ((avg_price_pp_unit - avg_price_scheduled) / avg_price_pp_unit) * 100
-            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style_step)
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_scheduled, line=line_style_step)
-            fig_bar.add_annotation(x=1, y=(avg_price_pp_unit + avg_price_scheduled) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#186e80", size=14))
+            fig_bar.add_shape(type="line", x0=0+bar_width, y0=avg_price_pp_unit, x1=1-bar_width, y1=avg_price_scheduled, line=line_style)
+            fig_bar.add_annotation(x=0.5, y=(avg_price_pp_unit + avg_price_scheduled) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, font=dict(color="#186e80", size=14))
+        # Angled line: Scheduled -> Single Flat
         if avg_price_scheduled > avg_price_single_flat > 0:
             saving = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_scheduled, x1=2, y1=avg_price_scheduled, line=line_style_step)
-            fig_bar.add_shape(type="line", x0=2, y0=avg_price_scheduled, x1=2, y1=avg_price_single_flat, line=line_style_step)
-            fig_bar.add_annotation(x=2, y=(avg_price_scheduled + avg_price_single_flat) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
-        # --- Overall Savings (orange, solid) ---
+            fig_bar.add_shape(type="line", x0=1+bar_width, y0=avg_price_scheduled, x1=2-bar_width, y1=avg_price_single_flat, line=line_style)
+            fig_bar.add_annotation(x=1.5, y=(avg_price_scheduled + avg_price_single_flat) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, font=dict(color="#4fb18c", size=14))
+        # Extended line: PP-Unit -> Single Flat
         if avg_price_pp_unit > avg_price_single_flat > 0:
             total_saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
-            y_level = avg_price_pp_unit * 1.05
-            fig_bar.add_shape(type="line", x0=0, y0=y_level, x1=2, y1=y_level, line=line_style_total)
-            fig_bar.add_shape(type="line", x0=2, y0=y_level, x1=2, y1=avg_price_single_flat, line=line_style_total)
-            fig_bar.add_annotation(x=2, y=(y_level + avg_price_single_flat) / 2, text=f"<b>-{total_saving:.1f}% TOTAL</b>", showarrow=False, xshift=45, font=dict(color="darkorange", size=14))
-
-    else: # Only PP-Unit and Single Flat are active
+            fig_bar.add_shape(type="line", x0=0+bar_width, y0=avg_price_pp_unit, x1=2, y1=avg_price_pp_unit, line=line_style)
+            fig_bar.add_shape(type="line", x0=2, y0=avg_price_pp_unit, x1=2, y1=avg_price_single_flat, line=line_style)
+            fig_bar.add_annotation(x=2, y=(avg_price_pp_unit + avg_price_single_flat) / 2, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
+    else: # Only two bars are active
         if avg_price_pp_unit > avg_price_single_flat > 0:
             saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
-            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style_step)
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_single_flat, line=line_style_step)
-            fig_bar.add_annotation(x=1, y=(avg_price_pp_unit + avg_price_single_flat) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
+            fig_bar.add_shape(type="line", x0=0+bar_width, y0=avg_price_pp_unit, x1=1-bar_width, y1=avg_price_single_flat, line=line_style)
+            fig_bar.add_annotation(x=0.5, y=(avg_price_pp_unit + avg_price_single_flat) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
