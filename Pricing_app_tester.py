@@ -1,6 +1,3 @@
-### CODE TO BE ALTERED ###
-
-
 
 import streamlit as st
 
