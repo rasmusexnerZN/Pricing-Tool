@@ -139,9 +139,14 @@ tco_pp_unit = cost_df[pp_unit_label].sum()
 tco_scheduled = cost_df['Scheduled Flat Fee'].sum()
 single_flat_fee_tco = single_flat_monthly_fee * contract_months
 
+st.markdown(f"A tool to compare **{pp_unit_label}**, **Scheduled Flat Fee**, and **Single Flat Fee** models.")
+
 # --- MODIFICATION: New 2x2 Chart Layout ---
 row1_col1, row1_col2 = st.columns(2)
 row2_col1, row2_col2 = st.columns(2)
+
+# --- MODIFICATION: Reusable legend configuration ---
+legend_config = dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5, font=dict(size=14))
 
 # Chart 1 (Top-Left): Total Cost Through Contract
 with row1_col1:
@@ -155,14 +160,30 @@ with row1_col1:
     fig_tco_bar.update_traces(textfont_size=16)
     fig_tco_bar.update_yaxes(tickformat=',')
     fig_tco_bar.update_xaxes(title_text="", tickfont_size=14)
-    fig_tco_bar.update_layout(legend=dict(font=dict(size=14)))
+    fig_tco_bar.update_layout(legend=legend_config)
 
-    if enable_scheduled_fee and tco_pp_unit > 0 and tco_scheduled < tco_pp_unit:
-        saving = ((tco_pp_unit - tco_scheduled) / tco_pp_unit) * 100
-        fig_tco_bar.add_annotation(x='Scheduled Flat Fee', y=tco_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
-    if tco_pp_unit > 0 and single_flat_fee_tco < tco_pp_unit:
-        saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
-        fig_tco_bar.add_annotation(x='Single Flat Fee', y=single_flat_fee_tco, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
+    # --- MODIFICATION: Waterfall visualization for Total Cost ---
+    line_style = dict(color="grey", dash="dash", width=1)
+    if enable_scheduled_fee:
+        # Drop 1: PP-Unit -> Scheduled
+        if tco_pp_unit > tco_scheduled > 0:
+            saving = ((tco_pp_unit - tco_scheduled) / tco_pp_unit) * 100
+            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
+            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=tco_scheduled, line=line_style)
+            fig_tco_bar.add_annotation(x=1, y=(tco_pp_unit + tco_scheduled) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#186e80", size=14))
+        # Drop 2: Scheduled -> Single Flat
+        if tco_scheduled > single_flat_fee_tco > 0:
+            saving = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
+            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_scheduled, x1=2, y1=tco_scheduled, line=line_style)
+            fig_tco_bar.add_shape(type="line", x0=2, y0=tco_scheduled, x1=2, y1=single_flat_fee_tco, line=line_style)
+            fig_tco_bar.add_annotation(x=2, y=(tco_scheduled + single_flat_fee_tco) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
+    else: # Only PP-Unit and Single Flat are active
+        if tco_pp_unit > single_flat_fee_tco > 0:
+            saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
+            # x-coordinates are 0 and 1 in this case
+            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
+            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=single_flat_fee_tco, line=line_style)
+            fig_tco_bar.add_annotation(x=1, y=(tco_pp_unit + single_flat_fee_tco) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
 
@@ -175,7 +196,7 @@ with row1_col2:
         fig_monthly.update_traces(selector={"name": "Scheduled Flat Fee"}, line_shape='hv')
     fig_monthly.update_traces(selector={"name": pp_unit_label}, line_shape='hv')
     fig_monthly.update_yaxes(tickformat=',')
-    fig_monthly.update_layout(legend=dict(font=dict(size=14)))
+    fig_monthly.update_layout(legend=legend_config)
     st.plotly_chart(fig_monthly, use_container_width=True)
 
 # Chart 3 (Bottom-Left): Effective Cost of Contract per Unit
@@ -197,14 +218,29 @@ with row2_col1:
     fig_bar.update_traces(texttemplate='%{value:,.0f}', textfont_size=16)
     fig_bar.update_yaxes(tickformat=',')
     fig_bar.update_xaxes(title_text="", tickfont_size=14)
-    fig_bar.update_layout(legend=dict(font=dict(size=14)))
+    fig_bar.update_layout(legend=legend_config)
 
-    if enable_scheduled_fee and avg_price_pp_unit > 0 and avg_price_scheduled < avg_price_pp_unit:
-        saving = ((avg_price_pp_unit - avg_price_scheduled) / avg_price_pp_unit) * 100
-        fig_bar.add_annotation(x='Scheduled Flat Fee', y=avg_price_scheduled, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#186e80", size=14))
-    if avg_price_pp_unit > 0 and avg_price_single_flat < avg_price_pp_unit:
-        saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
-        fig_bar.add_annotation(x='Single Flat Fee', y=avg_price_single_flat, text=f"<b>{saving:.1f}% saving</b><br>vs. {pp_unit_label}", showarrow=False, yshift=25, font=dict(color="#4fb18c", size=14))
+    # --- MODIFICATION: Waterfall visualization for Average Cost ---
+    line_style = dict(color="grey", dash="dash", width=1)
+    if enable_scheduled_fee:
+        # Drop 1: PP-Unit -> Scheduled
+        if avg_price_pp_unit > avg_price_scheduled > 0:
+            saving = ((avg_price_pp_unit - avg_price_scheduled) / avg_price_pp_unit) * 100
+            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
+            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_scheduled, line=line_style)
+            fig_bar.add_annotation(x=1, y=(avg_price_pp_unit + avg_price_scheduled) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#186e80", size=14))
+        # Drop 2: Scheduled -> Single Flat
+        if avg_price_scheduled > avg_price_single_flat > 0:
+            saving = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
+            fig_bar.add_shape(type="line", x0=1, y0=avg_price_scheduled, x1=2, y1=avg_price_scheduled, line=line_style)
+            fig_bar.add_shape(type="line", x0=2, y0=avg_price_scheduled, x1=2, y1=avg_price_single_flat, line=line_style)
+            fig_bar.add_annotation(x=2, y=(avg_price_scheduled + avg_price_single_flat) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
+    else: # Only PP-Unit and Single Flat are active
+        if avg_price_pp_unit > avg_price_single_flat > 0:
+            saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
+            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
+            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_single_flat, line=line_style)
+            fig_bar.add_annotation(x=1, y=(avg_price_pp_unit + avg_price_single_flat) / 2, text=f"<b>-{saving:.1f}%</b>", showarrow=False, xshift=25, font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -216,7 +252,7 @@ with row2_col2:
     plot_df_cumulative['Pricing Model'] = plot_df_cumulative['Pricing Model'].str.replace('Cumulative ', '')
     fig_cumulative = px.line(plot_df_cumulative, x='Month', y='Cumulative Cost', color='Pricing Model', labels={'Cumulative Cost': f'Cumulative Cost ({currency})'}, color_discrete_map=color_map)
     fig_cumulative.update_yaxes(tickformat=',')
-    fig_cumulative.update_layout(legend=dict(font=dict(size=14)))
+    fig_cumulative.update_layout(legend=legend_config)
     st.plotly_chart(fig_cumulative, use_container_width=True)
 
 
