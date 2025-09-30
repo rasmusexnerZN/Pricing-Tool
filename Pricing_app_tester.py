@@ -164,26 +164,33 @@ with row1_col1:
     if enable_scheduled_fee:
         if tco_pp_unit > tco_scheduled > 0:
             saving = ((tco_pp_unit - tco_scheduled) / tco_pp_unit) * 100
-            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=tco_scheduled, line=line_style)
-            # --- MODIFICATION: Changed x position to align with the vertical line ---
-            fig_tco_bar.add_annotation(x=1, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-10, xanchor='right', font=dict(color="#186e80", size=14))
+            # Horizontal line now extends to the left of the next bar
+            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=0.75, y1=tco_pp_unit, line=line_style)
+            fig_tco_bar.add_shape(type="line", x0=0.75, y0=tco_pp_unit, x1=0.75, y1=tco_scheduled, line=line_style)
+            # Annotation moved to the start of the horizontal line
+            fig_tco_bar.add_annotation(x=0.05, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='left', font=dict(color="#186e80", size=14))
         if tco_scheduled > single_flat_fee_tco > 0:
             saving = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_scheduled, x1=2, y1=tco_scheduled, line=line_style)
-            fig_tco_bar.add_shape(type="line", x0=2, y0=tco_scheduled, x1=2, y1=single_flat_fee_tco, line=line_style)
-            # --- MODIFICATION: Changed x position to align with the vertical line ---
-            fig_tco_bar.add_annotation(x=2, y=tco_scheduled, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-10, xanchor='right', font=dict(color="#4fb18c", size=14))
+            # Horizontal line now extends to the left of the next bar
+            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_scheduled, x1=1.75, y1=tco_scheduled, line=line_style)
+            fig_tco_bar.add_shape(type="line", x0=1.75, y0=tco_scheduled, x1=1.75, y1=single_flat_fee_tco, line=line_style)
+            # Annotation moved to the start of the horizontal line
+            fig_tco_bar.add_annotation(x=1.05, y=tco_scheduled, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='left', font=dict(color="#4fb18c", size=14))
         if tco_pp_unit > single_flat_fee_tco > 0:
             total_saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
+            # This line remains as it was, going to the right
             fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=2, y1=tco_pp_unit, line=line_style)
             fig_tco_bar.add_shape(type="line", x0=2, y0=tco_pp_unit, x1=2, y1=single_flat_fee_tco, line=line_style)
+            # Annotation also remains in its existing position
             fig_tco_bar.add_annotation(x=2, y=tco_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-20, font=dict(color="#4fb18c", size=14))
     else:
+        # If scheduled fee is not enabled, the comparison is directly between Pay-Per-Unit and Single Flat Fee
         if tco_pp_unit > single_flat_fee_tco > 0:
             saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
+            # This line remains as it was, going to the right
             fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
             fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=single_flat_fee_tco, line=line_style)
+            # Annotation also remains in its existing position
             fig_tco_bar.add_annotation(x=1, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-20, font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
@@ -225,26 +232,33 @@ with row2_col1:
     if enable_scheduled_fee:
         if avg_price_pp_unit > avg_price_scheduled > 0:
             saving = ((avg_price_pp_unit - avg_price_scheduled) / avg_price_pp_unit) * 100
-            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_scheduled, line=line_style)
-            # --- MODIFICATION: Changed x position to align with the vertical line ---
-            fig_bar.add_annotation(x=1, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-10, xanchor='right', font=dict(color="#186e80", size=14))
+            # Horizontal line now extends to the left of the next bar
+            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=0.75, y1=avg_price_pp_unit, line=line_style)
+            fig_bar.add_shape(type="line", x0=0.75, y0=avg_price_pp_unit, x1=0.75, y1=avg_price_scheduled, line=line_style)
+            # Annotation moved to the start of the horizontal line
+            fig_bar.add_annotation(x=0.05, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='left', font=dict(color="#186e80", size=14))
         if avg_price_scheduled > avg_price_single_flat > 0:
             saving = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_scheduled, x1=2, y1=avg_price_scheduled, line=line_style)
-            fig_bar.add_shape(type="line", x0=2, y0=avg_price_scheduled, x1=2, y1=avg_price_single_flat, line=line_style)
-            # --- MODIFICATION: Changed x position to align with the vertical line ---
-            fig_bar.add_annotation(x=2, y=avg_price_scheduled, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-10, xanchor='right', font=dict(color="#4fb18c", size=14))
+            # Horizontal line now extends to the left of the next bar
+            fig_bar.add_shape(type="line", x0=1, y0=avg_price_scheduled, x1=1.75, y1=avg_price_scheduled, line=line_style)
+            fig_bar.add_shape(type="line", x0=1.75, y0=avg_price_scheduled, x1=1.75, y1=avg_price_single_flat, line=line_style)
+            # Annotation moved to the start of the horizontal line
+            fig_bar.add_annotation(x=1.05, y=avg_price_scheduled, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='left', font=dict(color="#4fb18c", size=14))
         if avg_price_pp_unit > avg_price_single_flat > 0:
             total_saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
+            # This line remains as it was, going to the right
             fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=2, y1=avg_price_pp_unit, line=line_style)
             fig_bar.add_shape(type="line", x0=2, y0=avg_price_pp_unit, x1=2, y1=avg_price_single_flat, line=line_style)
+            # Annotation also remains in its existing position
             fig_bar.add_annotation(x=2, y=avg_price_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-20, font=dict(color="#4fb18c", size=14))
     else:
+        # If scheduled fee is not enabled, the comparison is directly between Pay-Per-Unit and Single Flat Fee
         if avg_price_pp_unit > avg_price_single_flat > 0:
             saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
+            # This line remains as it was, going to the right
             fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
             fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_single_flat, line=line_style)
+            # Annotation also remains in its existing position
             fig_bar.add_annotation(x=1, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=-20, font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
