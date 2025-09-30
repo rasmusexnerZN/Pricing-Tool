@@ -176,15 +176,15 @@ with row1_col1:
             total_saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
             fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=2, y1=tco_pp_unit, line=line_style)
             fig_tco_bar.add_shape(type="line", x0=2, y0=tco_pp_unit, x1=2, y1=single_flat_fee_tco, line=line_style)
-            # --- MODIFICATION: Annotation moved above the line ---
-            fig_tco_bar.add_annotation(x=1, y=tco_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=10, font=dict(color="#4fb18c", size=14))
+            # --- MODIFICATION: Annotation positioned at the vertical drop, but above the line ---
+            fig_tco_bar.add_annotation(x=2, y=tco_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=10, xshift=20, font=dict(color="#4fb18c", size=14))
     else:
         if tco_pp_unit > single_flat_fee_tco > 0:
             saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
             fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
             fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=single_flat_fee_tco, line=line_style)
-            # --- MODIFICATION: Annotation moved above the line ---
-            fig_tco_bar.add_annotation(x=0.5, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, font=dict(color="#4fb18c", size=14))
+            # --- MODIFICATION: Annotation positioned at the vertical drop, but above the line ---
+            fig_tco_bar.add_annotation(x=1, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=20, font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
 
@@ -237,15 +237,15 @@ with row2_col1:
             total_saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
             fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=2, y1=avg_price_pp_unit, line=line_style)
             fig_bar.add_shape(type="line", x0=2, y0=avg_price_pp_unit, x1=2, y1=avg_price_single_flat, line=line_style)
-            # --- MODIFICATION: Annotation moved above the line ---
-            fig_bar.add_annotation(x=1, y=avg_price_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=10, font=dict(color="#4fb18c", size=14))
+            # --- MODIFICATION: Annotation positioned at the vertical drop, but above the line ---
+            fig_bar.add_annotation(x=2, y=avg_price_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=10, xshift=20, font=dict(color="#4fb18c", size=14))
     else:
         if avg_price_pp_unit > avg_price_single_flat > 0:
             saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
             fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
             fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_single_flat, line=line_style)
-            # --- MODIFICATION: Annotation moved above the line ---
-            fig_bar.add_annotation(x=0.5, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, font=dict(color="#4fb18c", size=14))
+            # --- MODIFICATION: Annotation positioned at the vertical drop, but above the line ---
+            fig_bar.add_annotation(x=1, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xshift=20, font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
