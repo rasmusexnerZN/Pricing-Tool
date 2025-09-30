@@ -161,34 +161,32 @@ with row1_col1:
     fig_tco_bar.update_layout(legend=legend_config)
 
     line_style = dict(color="grey", dash="dash", width=1)
-    if enable_scheduled_fee:
+
+    # Always draw the reference line from Pay-Per-Unit
+    if tco_pp_unit > 0:
+        fig_tco_bar.add_shape(type="line", x0=-0.5, y0=tco_pp_unit, x1=len(models_to_plot)-0.5, y1=tco_pp_unit, line=line_style)
+        
+    if enable_scheduled_fee and pp_unit_label in models_to_plot:
+        # Saving for Scheduled Flat Fee vs Pay-Per-Unit
         if tco_pp_unit > tco_scheduled > 0:
             saving = ((tco_pp_unit - tco_scheduled) / tco_pp_unit) * 100
-            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=tco_scheduled, line=line_style)
-            # --- MODIFICATION: Centered the label on the dotted line ---
-            fig_tco_bar.add_annotation(x=0.5, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#186e80", size=14))
-        if tco_scheduled > single_flat_fee_tco > 0:
-            saving = ((tco_scheduled - single_flat_fee_tco) / tco_scheduled) * 100
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_scheduled, x1=2, y1=tco_scheduled, line=line_style)
-            fig_tco_bar.add_shape(type="line", x0=2, y0=tco_scheduled, x1=2, y1=single_flat_fee_tco, line=line_style)
-            # --- MODIFICATION: Centered the label on the dotted line ---
-            fig_tco_bar.add_annotation(x=1.5, y=tco_scheduled, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#4fb18c", size=14))
-        if tco_pp_unit > single_flat_fee_tco > 0:
-            total_saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
-            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=2, y1=tco_pp_unit, line=line_style)
-            fig_tco_bar.add_shape(type="line", x0=2, y0=tco_pp_unit, x1=2, y1=single_flat_fee_tco, line=line_style)
-            # --- MODIFICATION: Centered the label and adjusted yshift to avoid overlap ---
-            fig_tco_bar.add_annotation(x=1, y=tco_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=25, xanchor='center', font=dict(color="#4fb18c", size=14))
-    else:
+            # Vertical dotted line from Scheduled Flat Fee bar to reference line
+            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_scheduled, x1=1, y1=tco_pp_unit, line=line_style)
+            # Label positioned directly above the vertical dotted line
+            fig_tco_bar.add_annotation(x=1, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#186e80", size=14))
+    
+    if pp_unit_label in models_to_plot: # Always compare to Pay-Per-Unit if it exists
+        # Saving for Single Flat Fee vs Pay-Per-Unit
         if tco_pp_unit > single_flat_fee_tco > 0:
             saving = ((tco_pp_unit - single_flat_fee_tco) / tco_pp_unit) * 100
-            fig_tco_bar.add_shape(type="line", x0=0, y0=tco_pp_unit, x1=1, y1=tco_pp_unit, line=line_style)
-            fig_tco_bar.add_shape(type="line", x0=1, y0=tco_pp_unit, x1=1, y1=single_flat_fee_tco, line=line_style)
-            # --- MODIFICATION: Centered the label on the dotted line ---
-            fig_tco_bar.add_annotation(x=0.5, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#4fb18c", size=14))
+            x_pos_single_flat = models_to_plot.index('Single Flat Fee')
+            # Vertical dotted line from Single Flat Fee bar to reference line
+            fig_tco_bar.add_shape(type="line", x0=x_pos_single_flat, y0=single_flat_fee_tco, x1=x_pos_single_flat, y1=tco_pp_unit, line=line_style)
+            # Label positioned directly above the vertical dotted line
+            fig_tco_bar.add_annotation(x=x_pos_single_flat, y=tco_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#4fb18c", size=14))
 
     st.plotly_chart(fig_tco_bar, use_container_width=True)
+
 
 # Chart 2 (Top-Right): Monthly Cost of Contract
 with row1_col2:
@@ -224,32 +222,29 @@ with row2_col1:
     fig_bar.update_layout(legend=legend_config)
 
     line_style = dict(color="grey", dash="dash", width=1)
-    if enable_scheduled_fee:
+
+    # Always draw the reference line from Pay-Per-Unit
+    if avg_price_pp_unit > 0:
+        fig_bar.add_shape(type="line", x0=-0.5, y0=avg_price_pp_unit, x1=len(models_to_plot)-0.5, y1=avg_price_pp_unit, line=line_style)
+        
+    if enable_scheduled_fee and pp_unit_label in models_to_plot:
+        # Saving for Scheduled Flat Fee vs Pay-Per-Unit
         if avg_price_pp_unit > avg_price_scheduled > 0:
             saving = ((avg_price_pp_unit - avg_price_scheduled) / avg_price_pp_unit) * 100
-            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_scheduled, line=line_style)
-            # --- MODIFICATION: Centered the label on the dotted line ---
-            fig_bar.add_annotation(x=0.5, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#186e80", size=14))
-        if avg_price_scheduled > avg_price_single_flat > 0:
-            saving = ((avg_price_scheduled - avg_price_single_flat) / avg_price_scheduled) * 100
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_scheduled, x1=2, y1=avg_price_scheduled, line=line_style)
-            fig_bar.add_shape(type="line", x0=2, y0=avg_price_scheduled, x1=2, y1=avg_price_single_flat, line=line_style)
-            # --- MODIFICATION: Centered the label on the dotted line ---
-            fig_bar.add_annotation(x=1.5, y=avg_price_scheduled, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#4fb18c", size=14))
-        if avg_price_pp_unit > avg_price_single_flat > 0:
-            total_saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
-            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=2, y1=avg_price_pp_unit, line=line_style)
-            fig_bar.add_shape(type="line", x0=2, y0=avg_price_pp_unit, x1=2, y1=avg_price_single_flat, line=line_style)
-            # --- MODIFICATION: Centered the label and adjusted yshift to avoid overlap ---
-            fig_bar.add_annotation(x=1, y=avg_price_pp_unit, text=f"<b>-{total_saving:.1f}%</b>", showarrow=False, yshift=25, xanchor='center', font=dict(color="#4fb18c", size=14))
-    else:
+            # Vertical dotted line from Scheduled Flat Fee bar to reference line
+            fig_bar.add_shape(type="line", x0=1, y0=avg_price_scheduled, x1=1, y1=avg_price_pp_unit, line=line_style)
+            # Label positioned directly above the vertical dotted line
+            fig_bar.add_annotation(x=1, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#186e80", size=14))
+    
+    if pp_unit_label in models_to_plot: # Always compare to Pay-Per-Unit if it exists
+        # Saving for Single Flat Fee vs Pay-Per-Unit
         if avg_price_pp_unit > avg_price_single_flat > 0:
             saving = ((avg_price_pp_unit - avg_price_single_flat) / avg_price_pp_unit) * 100
-            fig_bar.add_shape(type="line", x0=0, y0=avg_price_pp_unit, x1=1, y1=avg_price_pp_unit, line=line_style)
-            fig_bar.add_shape(type="line", x0=1, y0=avg_price_pp_unit, x1=1, y1=avg_price_single_flat, line=line_style)
-            # --- MODIFICATION: Centered the label on the dotted line ---
-            fig_bar.add_annotation(x=0.5, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#4fb18c", size=14))
+            x_pos_single_flat = models_to_plot.index('Single Flat Fee')
+            # Vertical dotted line from Single Flat Fee bar to reference line
+            fig_bar.add_shape(type="line", x0=x_pos_single_flat, y0=avg_price_single_flat, x1=x_pos_single_flat, y1=avg_price_pp_unit, line=line_style)
+            # Label positioned directly above the vertical dotted line
+            fig_bar.add_annotation(x=x_pos_single_flat, y=avg_price_pp_unit, text=f"<b>-{saving:.1f}%</b>", showarrow=False, yshift=10, xanchor='center', font=dict(color="#4fb18c", size=14))
     
     st.plotly_chart(fig_bar, use_container_width=True)
 
